@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MacAtlas World v1.0</title>
+    <title>MacAtlas World v2.0</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,7 +11,7 @@
 
     <style>
         :root {
-            --bg-color: #4682B4; /* Changed to Steel Blue for "World/Ocean" feel */
+            --bg-color: #4682B4; 
             --window-bg: #ffffff;
             --border-color: #000000;
         }
@@ -38,10 +38,9 @@
             user-select: none;
         }
 
-        /* RETRO MAC WINDOW */
         #main-window {
             width: 95%;
-            max-width: 1000px; /* Slightly wider for World Map */
+            max-width: 1000px;
             height: 90vh;
             background: var(--window-bg);
             border: 2px solid var(--border-color);
@@ -82,7 +81,6 @@
             box-shadow: 1px 1px 0 #000;
         }
 
-        /* CONTENT AREA */
         #content {
             flex: 1;
             padding: 20px;
@@ -93,7 +91,6 @@
             position: relative;
         }
 
-        /* SCREEN MANAGEMENT */
         .screen {
             display: none;
             width: 100%;
@@ -130,7 +127,6 @@
         .btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 #000; }
         .btn:hover { background: #eee; }
 
-        /* GAME HUD */
         #hud {
             width: 100%;
             display: flex;
@@ -142,7 +138,6 @@
             flex-shrink: 0;
         }
 
-        /* MAP GAME & ZOOM CONTROLS */
         #map-container {
             flex: 1;
             width: 100%;
@@ -154,51 +149,28 @@
             cursor: grab;
         }
 
-        #map-container:active {
-            cursor: grabbing;
-        }
+        #map-container:active { cursor: grabbing; }
         
         #zoom-controls {
             position: absolute;
-            bottom: 10px;
-            right: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-            z-index: 100;
+            bottom: 10px; right: 10px;
+            display: flex; flexDirection: column; gap: 5px; z-index: 100;
         }
 
         .zoom-btn {
-            width: 32px;
-            height: 32px;
-            background: #fff;
-            border: 2px solid #000;
-            font-family: 'VT323', monospace;
-            font-size: 24px;
-            line-height: 24px;
-            text-align: center;
-            cursor: pointer;
-            box-shadow: 2px 2px 0 rgba(0,0,0,0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            width: 32px; height: 32px; background: #fff; border: 2px solid #000;
+            font-family: 'VT323', monospace; font-size: 24px; line-height: 24px;
+            text-align: center; cursor: pointer; box-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+            display: flex; justify-content: center; align-items: center;
         }
         
         .zoom-btn:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 rgba(0,0,0,0.5); }
         
-        svg {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
+        svg { width: 100%; height: 100%; display: block; }
 
         path {
-            fill: #fff;
-            stroke: #000;
-            stroke-width: 1;
-            cursor: pointer;
-            transition: fill 0.2s;
-            vector-effect: non-scaling-stroke;
+            fill: #fff; stroke: #000; stroke-width: 1; cursor: pointer;
+            transition: fill 0.2s; vector-effect: non-scaling-stroke;
         }
         
         #map-container path:hover { fill: #ddd; }
@@ -206,79 +178,37 @@
         #map-container path.highlighted { animation: blink 1s infinite; fill: #888 !important; }
         #map-container path.wrong { fill: #000 !important; }
 
-        /* PUZZLE SPECIFIC STYLES */
+        /* PUZZLE STYLES */
         #puzzle-area {
-            flex: 1;
-            width: 100%;
-            border: 2px solid #000;
-            background: #f0f8ff;
-            position: relative;
-            overflow: hidden;
-            touch-action: none;
-            min-height: 0;
+            flex: 1; width: 100%; border: 2px solid #000; background: #f0f8ff;
+            position: relative; overflow: hidden; touch-action: none; min-height: 0;
         }
-
         .puzzle-base { fill: #444; stroke: #000; stroke-width: 1; }
         .puzzle-target { fill: none; stroke: #888; stroke-width: 1; stroke-dasharray: 5,5; }
-        
         .puzzle-piece {
-            fill: #fff; stroke: #000; stroke-width: 1;
-            cursor: grab; filter: drop-shadow(3px 3px 0px rgba(0,0,0,0.3));
-            transition: transform 0.1s;
+            fill: #fff; stroke: #000; stroke-width: 1; cursor: grab;
+            filter: drop-shadow(3px 3px 0px rgba(0,0,0,0.3)); transition: transform 0.1s;
         }
         .puzzle-piece.dragging {
-            cursor: grabbing; fill: #eee;
-            filter: drop-shadow(5px 5px 0px rgba(0,0,0,0.5));
+            cursor: grabbing; fill: #eee; filter: drop-shadow(5px 5px 0px rgba(0,0,0,0.5));
             transition: none; z-index: 1000;
         }
-        .puzzle-piece.snapped {
-            fill: #444; cursor: default; filter: none; transition: fill 0.5s;
-        }
+        .puzzle-piece.snapped { fill: #444; cursor: default; filter: none; transition: fill 0.5s; }
         .puzzle-label {
             font-family: 'VT323', monospace; fill: #fff; font-size: 14px;
             text-anchor: middle; dominant-baseline: middle; pointer-events: none; 
             text-shadow: 1px 1px 0 #000; opacity: 0; animation: fadeIn 0.5s forwards; font-weight: bold;
         }
-        
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
         @keyframes blink { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
 
-        /* FLASH CARDS STYLES */
-        #flashcard-container {
-            flex: 1; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
-        
-        #the-card {
-            width: 80%; max-width: 500px; height: 300px;
-            border: 2px solid #000;
-            background: #fff;
-            box-shadow: 10px 10px 0 rgba(0,0,0,0.1);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            cursor: pointer;
-            margin-bottom: 20px;
-            transition: transform 0.1s;
-            position: relative;
-            padding: 20px;
-            text-align: center;
-        }
-        
-        #the-card:active { transform: scale(0.98); }
-        
-        .card-content-text { font-size: 48px; font-weight: bold; }
-        .card-content-sub { font-size: 24px; color: #666; margin-top: 10px; }
-        .card-icon { width: 100%; height: 80%; }
-        .card-hint { position: absolute; bottom: 10px; font-size: 16px; color: #999; }
-
-        .controls-row { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; justify-content: center; }
-        
-        /* FEEDBACK BAR */
+        /* FEEDBACK */
         #feedback-bar {
             margin-top: 10px; width: 100%; height: 40px; border: 2px solid #000;
             display: flex; align-items: center; justify-content: center;
             font-size: 24px; background: #eee; transition: background 0.2s;
             visibility: hidden; flex-shrink: 0; 
         }
-
         #feedback-bar.visible { visibility: visible; }
         #feedback-bar.correct { background: #000; color: #fff; }
         #feedback-bar.wrong { background: repeating-linear-gradient(45deg, #fff, #fff 10px, #ccc 10px, #ccc 20px); color: #000; font-weight: bold; }
@@ -288,76 +218,73 @@
             flex: 1; width: 100%; display: flex; flex-direction: column;
             justify-content: center; align-items: center; overflow: hidden; 
         }
-
         #capital-prompt, #trivia-prompt {
             font-size: 28px; margin-bottom: 10px; text-align: center; max-width: 800px; line-height: 1.2;
         }
-
         #capital-state-preview {
             height: 200px; width: 100%; max-width: 300px; margin: 10px 0;
             display: flex; justify-content: center; align-items: center;
         }
-        
         #capital-state-preview svg { filter: drop-shadow(4px 4px 0px rgba(0,0,0,0.2)); }
         #capital-state-preview path { fill: #ddd; stroke: #000; stroke-width: 2; cursor: default; }
-
         #capital-state-name, #trivia-state-name {
             font-size: 48px; font-weight: bold; margin-bottom: 20px;
             text-decoration: underline; text-align: center;
         }
-        
         #trivia-question-text {
             font-size: 32px; text-align: center; margin: 20px;
             max-width: 700px; min-height: 100px; display: flex; align-items: center; justify-content: center;
         }
-
         #options-grid, #trivia-options-grid {
             display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; max-width: 600px;
         }
-
         .option-btn {
             background: #fff; border: 2px solid #000; padding: 12px;
             font-family: 'VT323', monospace; font-size: 24px; cursor: pointer;
             box-shadow: 4px 4px 0 #000; transition: all 0.1s; text-align: center;
             display: flex; align-items: center; justify-content: center; min-height: 60px; line-height: 1.1;
         }
-
         .option-btn:hover { background: #eee; }
         .option-btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 #000; }
         .option-btn.correct-anim { background: #000; color: #fff; }
         .option-btn.wrong-anim { opacity: 0.5; background: #aaa; text-decoration: line-through; }
 
+        /* FLASH CARDS */
+        #flashcard-container {
+            flex: 1; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        #the-card {
+            width: 80%; max-width: 500px; height: 300px;
+            border: 2px solid #000; background: #fff;
+            box-shadow: 10px 10px 0 rgba(0,0,0,0.1);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            cursor: pointer; margin-bottom: 20px; transition: transform 0.1s;
+            position: relative; padding: 20px; text-align: center;
+        }
+        #the-card:active { transform: scale(0.98); }
+        .card-content-text { font-size: 48px; font-weight: bold; }
+        .card-content-sub { font-size: 24px; color: #666; margin-top: 10px; }
+        .card-hint { position: absolute; bottom: 10px; font-size: 16px; color: #999; }
+        .controls-row { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; justify-content: center; }
+
         /* MODALS */
-        #report-modal, #cert-modal {
+        #report-modal, #cert-modal, #practice-modal {
             display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(255,255,255,0.9); z-index: 100; flex-direction: column;
             justify-content: center; align-items: center;
         }
-
-        #report-card, #cert-card {
+        #report-card, #cert-card, #practice-card {
             background: #fff; border: 4px double #000; padding: 40px; text-align: center; box-shadow: 10px 10px 0 rgba(0,0,0,0.2);
             max-width: 90%;
         }
-        
         #cert-card {
             border: 10px solid #000;
-            background-image: radial-gradient(#eee 10%, transparent 10%);
-            background-size: 10px 10px;
+            background-image: radial-gradient(#eee 10%, transparent 10%); background-size: 10px 10px;
         }
-
         .shake-effect { animation: shake 0.5s; }
-
         @keyframes shake {
             0% { transform: translate(1px, 1px) rotate(0deg); }
             10% { transform: translate(-1px, -2px) rotate(-1deg); }
-            20% { transform: translate(-3px, 0px) rotate(1deg); }
-            30% { transform: translate(3px, 2px) rotate(0deg); }
-            40% { transform: translate(1px, -1px) rotate(1deg); }
-            50% { transform: translate(-1px, 2px) rotate(-1deg); }
-            60% { transform: translate(-3px, 1px) rotate(0deg); }
-            70% { transform: translate(3px, 1px) rotate(-1deg); }
-            80% { transform: translate(-1px, -1px) rotate(1deg); }
-            90% { transform: translate(1px, 2px) rotate(0deg); }
             100% { transform: translate(1px, -2px) rotate(-1deg); }
         }
     </style>
@@ -367,12 +294,12 @@
     <div id="main-window">
         <div id="title-bar">
             <div id="close-btn" onclick="quitGame()"></div>
-            <div id="title-text">MacAtlas World</div>
+            <div id="title-text">MacAtlas World v2.0</div>
         </div>
 
         <div id="content">
 
-            <!-- MENU SCREEN (Active by default) -->
+            <!-- MENU -->
             <div id="menu-screen" class="screen active">
                 <h1>MacAtlas</h1>
                 <p style="text-align:center; font-size: 20px;">WORLD EDITION</p>
@@ -382,7 +309,9 @@
                     <button class="btn" onclick="startGame('capitals')">NAME THE CAPITAL</button>
                     <button class="btn" onclick="startGame('trivia')">WORLD TRIVIA</button>
                     <button class="btn" onclick="startGame('puzzle')">REGION PUZZLE</button>
+                    <button class="btn" onclick="startGame('region_quiz')">REGION QUIZ</button>
                     <button class="btn" onclick="startGame('flashcards')">FLASH CARDS</button>
+                    <button class="btn" onclick="startGame('practice')">PRACTICE MODE</button>
                     <button class="btn" onclick="startGame('test')">FULL TEST (50)</button>
                 </div>
             </div>
@@ -395,7 +324,7 @@
                     <button style="font-family:'VT323'; background:none; border:1px solid #000; cursor:pointer;" onclick="quitGame()">QUIT</button>
                 </div>
 
-                <!-- MAP MODE ELEMENTS -->
+                <!-- MAP MODE / PRACTICE / REGION QUIZ -->
                 <div id="map-game-ui" style="display:none; width: 100%; flex: 1; min-height: 0; flex-direction: column;">
                     <div id="map-container">
                         <!-- SVG injected here -->
@@ -408,13 +337,12 @@
                     <div id="feedback-bar" class="visible">Locating Data...</div>
                 </div>
 
-                <!-- CAPITALS MODE ELEMENTS -->
+                <!-- CAPITALS & TRIVIA -->
                 <div id="capitals-game-ui" style="display:none; width: 100%; flex: 1; min-height: 0; flex-direction: column; align-items: center;">
                     <div class="quiz-area">
                         <div id="capital-prompt">WHAT IS THE CAPITAL OF</div>
                         <div id="capital-state-preview"></div>
                         <div id="capital-state-name">FRANCE</div>
-                        
                         <div id="options-grid">
                             <button class="option-btn" id="opt-0" onclick="checkCapital(0)">PARIS</button>
                             <button class="option-btn" id="opt-1" onclick="checkCapital(1)">BERLIN</button>
@@ -425,56 +353,49 @@
                     <div id="feedback-bar" style="margin-top:auto;"></div>
                 </div>
 
-                <!-- TRIVIA MODE ELEMENTS -->
                 <div id="trivia-game-ui" style="display:none; width: 100%; flex: 1; min-height: 0; flex-direction: column; align-items: center;">
                     <div class="quiz-area">
                         <div id="trivia-prompt">WORLD TRIVIA</div>
                         <div id="trivia-state-name">BRAZIL</div>
                         <div id="trivia-question-text">Question goes here...</div>
-                        
                         <div id="trivia-options-grid">
-                            <button class="option-btn" id="triv-0" onclick="checkTrivia(0)">Option A</button>
-                            <button class="option-btn" id="triv-1" onclick="checkTrivia(1)">Option B</button>
-                            <button class="option-btn" id="triv-2" onclick="checkTrivia(2)">Option C</button>
-                            <button class="option-btn" id="triv-3" onclick="checkTrivia(3)">Option D</button>
+                            <button class="option-btn" id="triv-0" onclick="checkTrivia(0)">A</button>
+                            <button class="option-btn" id="triv-1" onclick="checkTrivia(1)">B</button>
+                            <button class="option-btn" id="triv-2" onclick="checkTrivia(2)">C</button>
+                            <button class="option-btn" id="triv-3" onclick="checkTrivia(3)">D</button>
                         </div>
                     </div>
                     <div id="feedback-bar" style="margin-top:auto;"></div>
                 </div>
 
-                <!-- PUZZLE MODE ELEMENTS -->
+                <!-- PUZZLE -->
                 <div id="puzzle-game-ui" style="display:none; width: 100%; flex: 1; min-height: 0; flex-direction: column; align-items: center;">
                     <div style="font-size:24px; margin-bottom:5px; flex-shrink: 0;" id="puzzle-region-name">REGION: EUROPE</div>
-                    <div id="puzzle-area">
-                        <!-- SVG injected here -->
-                    </div>
+                    <div id="puzzle-area"></div>
                     <div id="feedback-bar" class="visible" style="margin-top:10px;">DRAG THE PIECES TO THE DOTTED LINES</div>
                 </div>
 
-                <!-- FLASH CARD ELEMENTS -->
+                <!-- FLASH CARDS -->
                 <div id="flashcards-ui" style="display:none; width: 100%; flex: 1; min-height: 0; flex-direction: column; align-items: center;">
                     <div class="controls-row">
                         <button class="btn" style="min-width:100px; padding:5px;" onclick="toggleFlashMode()">MODE: <span id="fc-mode-display">CAPITALS</span></button>
                         <button class="btn" style="min-width:100px; padding:5px;" onclick="toggleFlashSide()">START: <span id="fc-side-display">FRONT</span></button>
                     </div>
-                    
                     <div id="flashcard-container">
                         <div id="the-card" onclick="flipCard()">
                             <div id="card-content">FRONT</div>
                             <div class="card-hint">(CLICK TO FLIP)</div>
                         </div>
                     </div>
-
                     <div class="controls-row">
                         <button class="btn" style="min-width:80px;" onclick="prevCard()">&lt; PREV</button>
                         <span id="fc-count" style="align-self:center; font-size:24px;">1 / 50</span>
                         <button class="btn" style="min-width:80px;" onclick="nextCard()">NEXT &gt;</button>
                     </div>
                 </div>
-
             </div>
 
-            <!-- REPORT MODAL -->
+            <!-- MODALS -->
             <div id="report-modal">
                 <div id="report-card">
                     <h2>REPORT CARD</h2>
@@ -484,7 +405,6 @@
                 </div>
             </div>
 
-            <!-- CERTIFICATE MODAL -->
             <div id="cert-modal">
                 <div id="cert-card">
                     <h2>OFFICIAL CERTIFICATE</h2>
@@ -501,68 +421,44 @@
                 </div>
             </div>
 
+            <div id="practice-modal">
+                <div id="practice-card">
+                    <h2 id="prac-name" style="font-size:48px; text-decoration:underline;">FRANCE</h2>
+                    <p style="font-size:28px;">CAPITAL: <span id="prac-capital" style="font-weight:bold;">PARIS</span></p>
+                    <div style="margin:20px 0; padding:10px; background:#eee; border:1px dashed #000;">
+                        <p style="font-style:italic;" id="prac-trivia">Trivia goes here...</p>
+                    </div>
+                    <button class="btn" onclick="closePractice()">CLOSE</button>
+                </div>
+            </div>
+
         </div>
     </div>
 
 <script>
-    // --- GLOBAL STATE ---
     const state = {
-        allData: [],
-        triviaData: [],
-        puzzleData: [],
-        gameMode: null,
-        score: 0,
-        startTime: 0,
-        timerInterval: null,
-        pool: [],
-        currentIdx: 0,
-        
-        // Map Game Specifics
-        roundAttempts: 0,
-        roundResolved: false,
-
-        // Viewport
-        viewBox: { x: 0, y: 0, w: 1000, h: 600 },
-        isPanning: false,
-        lastPan: { x: 0, y: 0 },
-
-        // Stats
-        testTotal: 0,
-        testCorrect: 0,
-        testMapCorrect: 0,
-        testCapCorrect: 0,
-
-        // Quiz specific
+        allData: [], triviaData: [], puzzleData: [],
+        gameMode: null, score: 0, startTime: 0, timerInterval: null, pool: [], currentIdx: 0,
+        roundAttempts: 0, roundResolved: false,
+        viewBox: { x: 0, y: 0, w: 1000, h: 600 }, isPanning: false, lastPan: { x: 0, y: 0 },
+        testTotal: 0, testCorrect: 0, testMapCorrect: 0, testCapCorrect: 0,
         currentOptions: [],
-        
-        // Puzzle Specific
-        draggedElement: null,
-        dragOffset: { x: 0, y: 0 },
-        puzzlePiecesLeft: 0,
-        puzzleTotalPiecesInPool: 0,
-
-        // Flash Card Specific
-        fcMode: 'capitals',
-        fcStartSide: 'front',
-        fcFlipped: false
+        draggedElement: null, dragOffset: { x: 0, y: 0 }, puzzlePiecesLeft: 0, puzzleTotalPiecesInPool: 0,
+        fcMode: 'capitals', fcStartSide: 'front', fcFlipped: false
     };
 
-    const SVG_WIDTH = 1000;
-    const SVG_HEIGHT = 600;
+    const SVG_WIDTH = 1000, SVG_HEIGHT = 600;
 
     function showScreen(screenId) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(screenId).classList.add('active');
     }
 
-    // --- INITIALIZATION ---
     async function loadAllData() {
         try {
-            // Load WORLD Data
             const mapRes = await fetch('world110.json');
             if (!mapRes.ok) throw new Error("Could not load world110.json");
-            const mapData = await mapRes.json();
-            state.allData = mapData;
+            state.allData = await mapRes.json();
 
             const trivRes = await fetch('world_trivia.json');
             if (trivRes.ok) state.triviaData = await trivRes.json();
@@ -571,10 +467,9 @@
             if (puzRes.ok) state.puzzleData = await puzRes.json();
 
             renderMap();
-            
         } catch (e) {
             console.error(e);
-            alert("Error loading data. Ensure world110.json is present.");
+            alert("Error loading data. Ensure json files are present.");
         }
     }
 
@@ -603,13 +498,12 @@
         container.addEventListener('mousemove', doPan);
         container.addEventListener('mouseup', endPan);
         container.addEventListener('mouseleave', endPan);
-        
         container.addEventListener('touchstart', startPan, {passive: false});
         container.addEventListener('touchmove', doPan, {passive: false});
         container.addEventListener('touchend', endPan);
     }
 
-    // --- ZOOM & PAN ---
+    // ZOOM/PAN
     function updateViewBox() {
         const svg = document.getElementById('main-map-svg');
         if(svg) svg.setAttribute("viewBox", `${state.viewBox.x} ${state.viewBox.y} ${state.viewBox.w} ${state.viewBox.h}`);
@@ -617,23 +511,16 @@
     function zoomMap(factor) {
         const cx = state.viewBox.x + state.viewBox.w / 2;
         const cy = state.viewBox.y + state.viewBox.h / 2;
-        const newW = state.viewBox.w / factor;
-        const newH = state.viewBox.h / factor;
-        state.viewBox.x = cx - newW / 2;
-        state.viewBox.y = cy - newH / 2;
-        state.viewBox.w = newW;
-        state.viewBox.h = newH;
+        state.viewBox.w /= factor; state.viewBox.h /= factor;
+        state.viewBox.x = cx - state.viewBox.w / 2; state.viewBox.y = cy - state.viewBox.h / 2;
         updateViewBox();
     }
-    function resetZoom() {
-        state.viewBox = { x: 0, y: 0, w: SVG_WIDTH, h: SVG_HEIGHT };
-        updateViewBox();
-    }
+    function resetZoom() { state.viewBox = { x: 0, y: 0, w: SVG_WIDTH, h: SVG_HEIGHT }; updateViewBox(); }
+    
     let isClick = true;
     function startPan(e) {
         if (e.target.closest('#zoom-controls')) return;
-        e.preventDefault();
-        state.isPanning = true; isClick = true;
+        e.preventDefault(); state.isPanning = true; isClick = true;
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         state.lastPan = { x: clientX, y: clientY };
@@ -643,51 +530,46 @@
         e.preventDefault();
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        const dx = clientX - state.lastPan.x;
-        const dy = clientY - state.lastPan.y;
+        const dx = clientX - state.lastPan.x, dy = clientY - state.lastPan.y;
         if (Math.abs(dx) > 5 || Math.abs(dy) > 5) isClick = false;
         const container = document.getElementById('map-container');
         const ratio = state.viewBox.w / container.clientWidth;
-        state.viewBox.x -= dx * ratio;
-        state.viewBox.y -= dy * ratio;
+        state.viewBox.x -= dx * ratio; state.viewBox.y -= dy * ratio;
         state.lastPan = { x: clientX, y: clientY };
         updateViewBox();
     }
     function endPan(e) {
         if (!state.isPanning) return;
         state.isPanning = false;
-        if (isClick && (state.gameMode === 'map' || (state.gameMode === 'test' && state.pool[state.currentIdx].type === 'map'))) {
-            let target = e.target;
-            if (e.changedTouches && e.changedTouches.length > 0) {
-                 const t = e.changedTouches[0];
-                 target = document.elementFromPoint(t.clientX, t.clientY);
-            }
-            if (target && target.tagName === 'path' && target.hasAttribute('data-name')) {
-                const name = target.getAttribute('data-name');
-                const sObj = state.allData.find(s => s.name === name);
+        if (isClick) handleMapInteractions(e);
+    }
+
+    function handleMapInteractions(e) {
+        let target = e.target;
+        if (e.changedTouches && e.changedTouches.length > 0) {
+             target = document.elementFromPoint(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+        }
+        if (target && target.tagName === 'path' && target.hasAttribute('data-name')) {
+            const name = target.getAttribute('data-name');
+            const sObj = state.allData.find(s => s.name === name);
+            
+            if (state.gameMode === 'practice') {
+                showPracticeInfo(sObj);
+            } else if (state.gameMode === 'map' || state.gameMode === 'region_quiz' || (state.gameMode === 'test' && state.pool[state.currentIdx].type === 'map')) {
                 if(sObj) handleMapClick(sObj);
             }
         }
     }
 
-    // --- GAME LOOP ---
-
+    // GAME LOOP
     function startGame(mode) {
         if (state.allData.length === 0) { alert("Loading..."); return; }
-
-        state.gameMode = mode;
-        state.score = 0;
-        state.testTotal = 0;
-        state.testCorrect = 0;
-        state.testMapCorrect = 0;
-        state.testCapCorrect = 0;
-        state.startTime = Date.now();
-        state.currentIdx = 0;
+        state.gameMode = mode; state.score = 0; state.testTotal = 0; state.testCorrect = 0;
+        state.testMapCorrect = 0; state.testCapCorrect = 0; state.startTime = Date.now(); state.currentIdx = 0;
         resetZoom();
-
         document.getElementById('hud').style.display = 'flex';
 
-        // MODE SETUP
+        // POOL LOGIC
         if (mode === 'map' || mode === 'capitals') {
             state.pool = [...state.allData].sort(() => 0.5 - Math.random()).slice(0, 10);
         } else if (mode === 'trivia') {
@@ -700,40 +582,43 @@
             document.getElementById('hud').style.display = 'none';
         } else if (mode === 'test') {
             let all = [...state.allData].sort(() => 0.5 - Math.random());
-            let q1 = all.slice(0, 25).map(s => ({ type: 'capital', data: s }));
-            let q2 = all.slice(25, 50).map(s => ({ type: 'map', data: s }));
-            state.pool = [...q1, ...q2].sort(() => 0.5 - Math.random());
+            state.pool = [...all.slice(0,25).map(s=>({type:'capital',data:s})), ...all.slice(25,50).map(s=>({type:'map',data:s}))].sort(() => 0.5 - Math.random());
+        } else if (mode === 'region_quiz') {
+            // Pick a random region from puzzle data, then find countries in it
+            const region = state.puzzleData[Math.floor(Math.random() * state.puzzleData.length)];
+            state.regionQuizName = region.name;
+            // Get country objects for this region
+            state.pool = region.pieces.map(pName => state.allData.find(s => s.name === pName)).filter(s => s);
+            // Zoom to region? We can try auto-zoom logic later, for now let user find it.
+        } else if (mode === 'practice') {
+            state.pool = [];
         }
 
         document.getElementById('score-display').innerText = "SCORE: 0";
         showScreen('game-screen');
-
         if (state.timerInterval) clearInterval(state.timerInterval);
-        if (mode !== 'flashcards') state.timerInterval = setInterval(updateTimer, 1000);
+        if (mode !== 'flashcards' && mode !== 'practice') state.timerInterval = setInterval(updateTimer, 1000);
 
-        // Hide all sub-game UIs first
-        document.querySelectorAll('#game-screen > div').forEach(d => { 
-            if(d.id !== 'hud') d.style.display = 'none'; 
-        });
+        document.querySelectorAll('#game-screen > div').forEach(d => { if(d.id !== 'hud') d.style.display = 'none'; });
 
-        // ROUTE TO CORRECT UI
-        if (mode === 'map') {
+        if (mode === 'map' || mode === 'region_quiz' || mode === 'practice') {
             document.getElementById('map-game-ui').style.display = 'flex';
             document.querySelector('#map-game-ui #feedback-bar').classList.add('visible');
-            loadMapRound();
+            if (mode === 'practice') {
+                document.querySelector('#map-game-ui #feedback-bar').innerText = "CLICK ANY COUNTRY TO LEARN";
+            } else {
+                loadMapRound();
+            }
         } else if (mode === 'capitals') {
-            document.getElementById('capitals-game-ui').style.display = 'flex';
-            loadCapitalRound();
+            document.getElementById('capitals-game-ui').style.display = 'flex'; loadCapitalRound();
         } else if (mode === 'trivia') {
-            document.getElementById('trivia-game-ui').style.display = 'flex';
-            loadTriviaRound();
+            document.getElementById('trivia-game-ui').style.display = 'flex'; loadTriviaRound();
         } else if (mode === 'puzzle') {
-            document.getElementById('puzzle-game-ui').style.display = 'flex';
+            document.getElementById('puzzle-game-ui').style.display = 'flex'; 
             document.querySelector('#puzzle-game-ui #feedback-bar').classList.add('visible');
             loadPuzzleRound();
         } else if (mode === 'flashcards') {
-            document.getElementById('flashcards-ui').style.display = 'flex';
-            loadFlashCard();
+            document.getElementById('flashcards-ui').style.display = 'flex'; loadFlashCard();
         } else if (mode === 'test') {
             loadTestRound();
         }
@@ -743,6 +628,7 @@
         if (state.timerInterval) clearInterval(state.timerInterval);
         document.getElementById('report-modal').style.display = 'none';
         document.getElementById('cert-modal').style.display = 'none';
+        document.getElementById('practice-modal').style.display = 'none';
         showScreen('menu-screen');
     }
 
@@ -753,192 +639,49 @@
         document.getElementById('timer-display').innerText = `TIME: ${m}:${s}`;
     }
 
-    // --- TEST MODE ROUTER ---
-    function loadTestRound() {
-        if (state.currentIdx >= state.pool.length) { showCertificate(); return; }
+    // --- PRACTICE MODE ---
+    function showPracticeInfo(country) {
+        document.getElementById('prac-name').innerText = country.name.toUpperCase();
+        document.getElementById('prac-capital').innerText = country.capital.toUpperCase();
         
-        const q = state.pool[state.currentIdx];
+        // Find trivia
+        const t = state.triviaData.find(t => t.state === country.name);
+        document.getElementById('prac-trivia').innerText = t ? t.question + " Answer: " + t.answer : "Did you know? " + country.name + " is amazing!";
         
-        document.getElementById('map-game-ui').style.display = 'none';
-        document.getElementById('capitals-game-ui').style.display = 'none';
-        
-        if (q.type === 'map') {
-            document.getElementById('map-game-ui').style.display = 'flex';
-            document.querySelector('#map-game-ui #feedback-bar').classList.add('visible');
-            loadMapRound(q.data);
-        } else {
-            document.getElementById('capitals-game-ui').style.display = 'flex';
-            loadCapitalRound(q.data);
-        }
+        document.getElementById('practice-modal').style.display = 'flex';
     }
+    function closePractice() { document.getElementById('practice-modal').style.display = 'none'; }
 
-    function showCertificate() {
-        document.getElementById('cert-caps').innerText = `${state.testCapCorrect}/25`;
-        document.getElementById('cert-maps').innerText = `${state.testMapCorrect}/25`;
-        document.getElementById('cert-total').innerText = `${state.testCorrect}/50`;
-        document.getElementById('cert-modal').style.display = 'flex';
-    }
-    
-    function closeCert() {
-        document.getElementById('cert-modal').style.display = 'none';
-        quitGame();
-    }
-
-    // --- FLASH CARDS ---
-    function toggleFlashMode() {
-        state.fcMode = state.fcMode === 'capitals' ? 'shapes' : 'capitals';
-        document.getElementById('fc-mode-display').innerText = state.fcMode.toUpperCase();
-        loadFlashCard();
-    }
-    function toggleFlashSide() {
-        state.fcStartSide = state.fcStartSide === 'front' ? 'back' : 'front';
-        document.getElementById('fc-side-display').innerText = state.fcStartSide.toUpperCase();
-        loadFlashCard();
-    }
-    function loadFlashCard() {
-        state.fcFlipped = false;
-        renderCardContent();
-        document.getElementById('fc-count').innerText = `${state.currentIdx + 1} / ${state.pool.length}`;
-    }
-    function flipCard() {
-        state.fcFlipped = !state.fcFlipped;
-        renderCardContent();
-    }
-    function renderCardContent() {
-        const item = state.pool[state.currentIdx];
-        const content = document.getElementById('card-content');
-        content.innerHTML = '';
-        
-        let showFront = !state.fcFlipped;
-        if (state.fcStartSide === 'back') showFront = !showFront;
-
-        if (state.fcMode === 'capitals') {
-            if (showFront) {
-                content.innerHTML = `<div class="card-content-text">${item.name.toUpperCase()}</div><div class="card-content-sub">COUNTRY</div>`;
-            } else {
-                content.innerHTML = `<div class="card-content-text">${item.capital.toUpperCase()}</div><div class="card-content-sub">CAPITAL</div>`;
-            }
-        } else {
-            if (showFront) {
-                const ns = "http://www.w3.org/2000/svg";
-                const svg = document.createElementNS(ns, "svg");
-                svg.setAttribute("viewBox", "0 0 1000 600");
-                const path = document.createElementNS(ns, "path");
-                path.setAttribute("d", item.path);
-                path.setAttribute("fill", "#444");
-                path.setAttribute("stroke", "none");
-                svg.appendChild(path);
-                content.appendChild(svg);
-                
-                setTimeout(() => {
-                    try {
-                        const bbox = path.getBBox();
-                        const pad = 20;
-                        svg.setAttribute("viewBox", `${bbox.x - pad} ${bbox.y - pad} ${bbox.width + (pad*2)} ${bbox.height + (pad*2)}`);
-                    } catch(e){}
-                }, 0);
-            } else {
-                content.innerHTML = `<div class="card-content-text">${item.name.toUpperCase()}</div>`;
-            }
-        }
-    }
-    function nextCard() {
-        state.currentIdx++;
-        if (state.currentIdx >= state.pool.length) state.currentIdx = 0;
-        loadFlashCard();
-    }
-    function prevCard() {
-        state.currentIdx--;
-        if (state.currentIdx < 0) state.currentIdx = state.pool.length - 1;
-        loadFlashCard();
-    }
-
-
-    // --- QUIZ LOGIC ---
-    function loadCapitalRound(overrideData) {
-        let targetState;
-        if (state.gameMode === 'test') {
-            targetState = overrideData;
-        } else {
-            if (state.currentIdx >= state.pool.length) { showReport(); return; }
-            targetState = state.pool[state.currentIdx];
-        }
-
-        document.getElementById('capital-state-name').innerText = targetState.name.toUpperCase();
-        const feedback = document.querySelector('#capitals-game-ui #feedback-bar');
-        feedback.classList.remove('visible'); feedback.className = ''; 
-        
-        const previewContainer = document.getElementById('capital-state-preview');
-        previewContainer.innerHTML = ''; 
-        const ns = "http://www.w3.org/2000/svg";
-        const svg = document.createElementNS(ns, "svg");
-        svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
-        const path = document.createElementNS(ns, "path");
-        path.setAttribute("d", targetState.path);
-        svg.appendChild(path);
-        previewContainer.appendChild(svg);
-        setTimeout(() => { try { const bbox = path.getBBox(); const pad = 30; svg.setAttribute("viewBox", `${bbox.x - pad} ${bbox.y - pad} ${bbox.width + (pad*2)} ${bbox.height + (pad*2)}`); } catch(e) {} }, 10);
-        
-        const correctOption = { name: targetState.capital, isCorrect: true };
-        const distractorsPool = state.allData.filter(s => s.name !== targetState.name);
-        const shuffledDistractors = distractorsPool.sort(() => 0.5 - Math.random()).slice(0, 3);
-        const options = shuffledDistractors.map(s => ({ name: s.capital, isCorrect: false }));
-        options.push(correctOption);
-        state.currentOptions = options.sort(() => 0.5 - Math.random());
-        for(let i=0; i<4; i++) { const btn = document.getElementById(`opt-${i}`); btn.innerText = state.currentOptions[i].name.toUpperCase(); btn.classList.remove('correct-anim', 'wrong-anim'); btn.disabled = false; }
-    }
-
-    function checkCapital(idx) {
-        const selected = state.currentOptions[idx];
-        const btn = document.getElementById(`opt-${idx}`);
-        const feedback = document.querySelector('#capitals-game-ui #feedback-bar');
-        feedback.classList.add('visible');
-        for(let i=0; i<4; i++) document.getElementById(`opt-${i}`).disabled = true;
-        
-        if (state.gameMode !== 'test') state.testTotal++;
-
-        if (selected.isCorrect) {
-            if (state.gameMode === 'test') { state.testCapCorrect++; state.testCorrect++; } 
-            else { state.testCorrect++; state.score += 10; }
-            
-            document.getElementById('score-display').innerText = "SCORE: " + state.score;
-            btn.classList.add('correct-anim'); feedback.className = 'correct visible'; feedback.innerText = "CORRECT!"; 
-            setTimeout(nextCapitalRound, 1000);
-        } else {
-            btn.classList.add('wrong-anim'); feedback.className = 'wrong visible';
-            const correctCap = state.currentOptions.find(o => o.isCorrect).name.toUpperCase();
-            feedback.innerText = `WRONG. IT IS ${correctCap}`;
-            state.currentOptions.forEach((opt, i) => { if(opt.isCorrect) document.getElementById(`opt-${i}`).classList.add('correct-anim'); });
-            setTimeout(nextCapitalRound, 2000); 
-        }
-    }
-    
-    function nextCapitalRound() { 
-        state.currentIdx++; 
-        if (state.gameMode === 'test') loadTestRound();
-        else loadCapitalRound(); 
-    }
-
-    // --- MAP LOGIC ---
+    // --- MAP GAME ---
     function loadMapRound(overrideData) {
         state.roundAttempts = 0; state.roundResolved = false;
         document.querySelectorAll('path').forEach(p => { p.classList.remove('highlighted', 'wrong', 'correct'); });
         
         let target;
-        if (state.gameMode === 'test') {
-            target = overrideData;
-        } else {
+        if (state.gameMode === 'test') target = overrideData;
+        else {
             if (state.currentIdx >= state.pool.length) { showReport(); return; }
             target = state.pool[state.currentIdx];
         }
         
         const feedback = document.querySelector('#map-game-ui #feedback-bar');
-        feedback.className = 'visible'; feedback.innerText = `FIND: ${target.name.toUpperCase()}`;
+        feedback.className = 'visible'; 
+        if (state.gameMode === 'region_quiz') {
+            feedback.innerText = `REGION: ${state.regionQuizName.toUpperCase()} - FIND ${target.name.toUpperCase()}`;
+        } else {
+            feedback.innerText = `FIND: ${target.name.toUpperCase()}`;
+        }
+        
+        // Auto-zoom for region quiz?
+        if (state.gameMode === 'region_quiz' && state.currentIdx === 0) {
+            // Try to frame the first country roughly? Or just let them pan.
+            // Let's reset zoom to give them context first.
+            if(state.currentIdx === 0) resetZoom(); 
+        }
     }
 
     function handleMapClick(clickedState) {
         if (state.roundResolved) return;
-        
         let correct;
         if (state.gameMode === 'test') correct = state.pool[state.currentIdx].data;
         else {
@@ -953,53 +696,36 @@
 
         if (clickedState.name === correct.name) {
             state.roundResolved = true; clickedEl.classList.add('correct'); feedback.className = 'correct visible';
-            
-            if (state.gameMode === 'test') {
-                state.testMapCorrect++; state.testCorrect++;
-                feedback.innerText = "CORRECT!";
-                setTimeout(nextMapRound, 1000);
-            } else {
-                if (state.roundAttempts === 0) { state.testCorrect++; state.score += 15; feedback.innerText = "EXCELLENT!"; } 
-                else { state.score += 5; feedback.innerText = "CORRECT!"; }
-                document.getElementById('score-display').innerText = "SCORE: " + state.score; 
-                setTimeout(nextMapRound, 1000);
+            if (state.gameMode === 'test') { state.testMapCorrect++; state.testCorrect++; feedback.innerText = "CORRECT!"; }
+            else { 
+                if(state.roundAttempts===0) { state.testCorrect++; state.score+=15; feedback.innerText="EXCELLENT!"; }
+                else { state.score+=5; feedback.innerText="CORRECT!"; }
             }
+            document.getElementById('score-display').innerText = "SCORE: " + state.score; setTimeout(nextMapRound, 1000);
         } else {
             clickedEl.classList.add('wrong');
-            
             if (state.gameMode === 'test') {
-                state.roundResolved = true;
-                feedback.className = 'wrong visible';
+                state.roundResolved = true; feedback.className = 'wrong visible';
                 feedback.innerText = `WRONG. THAT WAS ${clickedState.name.toUpperCase()}.`;
-                const correctID = "map-" + correct.name.replace(/\s/g, '');
-                const correctEl = document.getElementById(correctID);
-                if (correctEl) correctEl.classList.add('highlighted');
+                const cID = "map-"+correct.name.replace(/\s/g,'');
+                const cEl = document.getElementById(cID); if(cEl) cEl.classList.add('highlighted');
                 setTimeout(nextMapRound, 2000);
             } else {
-                const win = document.getElementById('game-screen');
-                win.classList.remove('shake-effect'); void win.offsetWidth; win.classList.add('shake-effect');
-                
                 if (state.roundAttempts === 0) {
-                    state.roundAttempts++; feedback.classList.add('wrong', 'visible'); feedback.innerText = `THAT IS ${clickedState.name.toUpperCase()}. TRY AGAIN.`;
+                    state.roundAttempts++; feedback.innerText = `THAT IS ${clickedState.name.toUpperCase()}. TRY AGAIN.`;
                 } else {
                     state.roundResolved = true;
-                    const correctID = "map-" + correct.name.replace(/\s/g, '');
-                    const correctEl = document.getElementById(correctID);
-                    if (correctEl) correctEl.classList.add('highlighted');
-                    feedback.classList.add('wrong', 'visible'); feedback.innerText = `WRONG. THAT WAS ${correct.name.toUpperCase()}.`;
+                    const cID = "map-"+correct.name.replace(/\s/g,'');
+                    const cEl = document.getElementById(cID); if(cEl) cEl.classList.add('highlighted');
+                    feedback.innerText = `WRONG. THAT WAS ${correct.name.toUpperCase()}.`;
                     setTimeout(nextMapRound, 2500);
                 }
             }
         }
     }
+    function nextMapRound() { state.currentIdx++; if(state.gameMode==='test') loadTestRound(); else loadMapRound(); }
 
-    function nextMapRound() { 
-        state.currentIdx++; 
-        if (state.gameMode === 'test') loadTestRound();
-        else loadMapRound(); 
-    }
-
-    // --- PUZZLE LOGIC ---
+    // --- PUZZLE ---
     function loadPuzzleRound() {
         if (state.currentIdx >= state.pool.length) { showReport(); return; }
         const levelData = state.pool[state.currentIdx];
@@ -1018,13 +744,11 @@
 
         state.puzzlePiecesLeft = piecesStates.length;
 
-        // Base
         const basePath = document.createElementNS(ns, "path");
         basePath.setAttribute("d", baseState.path); basePath.setAttribute("class", "puzzle-base");
         svg.appendChild(basePath);
         setTimeout(() => addLabelToPuzzlePiece(basePath, baseState.name, svg), 100);
 
-        // Targets & Pieces
         piecesStates.forEach(p => {
             const targetPath = document.createElementNS(ns, "path");
             targetPath.setAttribute("d", p.path); targetPath.setAttribute("class", "puzzle-target");
@@ -1042,6 +766,7 @@
         });
         container.appendChild(svg);
 
+        // Zoom 80
         setTimeout(() => {
             try {
                 let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -1058,14 +783,13 @@
         svg.addEventListener('mousemove', drag); svg.addEventListener('touchmove', drag, {passive: false});
         svg.addEventListener('mouseup', endDrag); svg.addEventListener('touchend', endDrag); svg.addEventListener('mouseleave', endDrag);
     }
-    
+    // Puzzle Helpers (Drag etc)
     function addLabelToPuzzlePiece(pathElement, text, svgContainer) {
         try {
             const bbox = pathElement.getBBox();
-            const cx = bbox.x + bbox.width / 2; const cy = bbox.y + bbox.height / 2;
             const ns = "http://www.w3.org/2000/svg";
             const textEl = document.createElementNS(ns, "text");
-            textEl.setAttribute("x", cx); textEl.setAttribute("y", cy);
+            textEl.setAttribute("x", bbox.x + bbox.width/2); textEl.setAttribute("y", bbox.y + bbox.height/2);
             textEl.setAttribute("class", "puzzle-label"); textEl.textContent = text.toUpperCase();
             if (bbox.width < 20 || bbox.height < 20) textEl.setAttribute("font-size", "10px"); 
             svgContainer.appendChild(textEl);
@@ -1076,7 +800,6 @@
         const svg = document.querySelector('#puzzle-area svg'); const piece = e.target;
         if (piece.classList.contains('snapped')) return;
         state.draggedElement = piece; piece.classList.add('dragging');
-        document.querySelector('#puzzle-game-ui #feedback-bar').innerText = "MOVING: " + piece.dataset.id.toUpperCase();
         svg.appendChild(piece);
         const pt = getEventPoint(e, svg);
         state.dragOffset.x = pt.x - parseFloat(piece.dataset.tx); state.dragOffset.y = pt.y - parseFloat(piece.dataset.ty);
@@ -1097,15 +820,9 @@
         if (dist < 20) {
             piece.setAttribute("transform", "translate(0, 0)"); piece.classList.add('snapped');
             addLabelToPuzzlePiece(piece, name, svg);
-            const feedback = document.querySelector('#puzzle-game-ui #feedback-bar');
-            feedback.innerText = "PLACED: " + name.toUpperCase(); feedback.className = 'correct visible';
             state.puzzlePiecesLeft--; state.score += 20; state.testCorrect++; 
             document.getElementById('score-display').innerText = "SCORE: " + state.score;
-            if (state.puzzlePiecesLeft <= 0) { feedback.innerText = "REGION COMPLETE!"; setTimeout(nextPuzzleRound, 1500); }
-            else { setTimeout(() => { if (state.puzzlePiecesLeft > 0) { feedback.innerText = "NEXT PIECE..."; feedback.className = 'visible'; } }, 1000); }
-        } else {
-            const feedback = document.querySelector('#puzzle-game-ui #feedback-bar');
-            feedback.innerText = "NOT QUITE..."; feedback.className = 'wrong visible';
+            if (state.puzzlePiecesLeft <= 0) setTimeout(nextPuzzleRound, 1500);
         }
     }
     function getEventPoint(e, svg) {
@@ -1115,7 +832,52 @@
     }
     function nextPuzzleRound() { state.currentIdx++; loadPuzzleRound(); }
 
-    // --- TRIVIA LOGIC ---
+    // --- OTHER MODES (Capitals/Trivia/Flash/Test) ---
+    function loadCapitalRound(overrideData) {
+        let targetState;
+        if (state.gameMode === 'test') targetState = overrideData;
+        else {
+            if (state.currentIdx >= state.pool.length) { showReport(); return; }
+            targetState = state.pool[state.currentIdx];
+        }
+        document.getElementById('capital-state-name').innerText = targetState.name.toUpperCase();
+        const feedback = document.querySelector('#capitals-game-ui #feedback-bar');
+        feedback.classList.remove('visible'); feedback.className = ''; 
+        
+        const previewContainer = document.getElementById('capital-state-preview'); previewContainer.innerHTML = ''; 
+        const ns = "http://www.w3.org/2000/svg"; const svg = document.createElementNS(ns, "svg");
+        svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+        const path = document.createElementNS(ns, "path"); path.setAttribute("d", targetState.path);
+        svg.appendChild(path); previewContainer.appendChild(svg);
+        setTimeout(() => { try { const bbox = path.getBBox(); const pad = 30; svg.setAttribute("viewBox", `${bbox.x - pad} ${bbox.y - pad} ${bbox.width + (pad*2)} ${bbox.height + (pad*2)}`); } catch(e) {} }, 10);
+        
+        const correctOption = { name: targetState.capital, isCorrect: true };
+        const distractorsPool = state.allData.filter(s => s.name !== targetState.name);
+        const shuffledDistractors = distractorsPool.sort(() => 0.5 - Math.random()).slice(0, 3);
+        const options = shuffledDistractors.map(s => ({ name: s.capital, isCorrect: false }));
+        options.push(correctOption);
+        state.currentOptions = options.sort(() => 0.5 - Math.random());
+        for(let i=0; i<4; i++) { const btn = document.getElementById(`opt-${i}`); btn.innerText = state.currentOptions[i].name.toUpperCase(); btn.classList.remove('correct-anim', 'wrong-anim'); btn.disabled = false; }
+    }
+    function checkCapital(idx) {
+        const selected = state.currentOptions[idx]; const btn = document.getElementById(`opt-${idx}`);
+        const feedback = document.querySelector('#capitals-game-ui #feedback-bar'); feedback.classList.add('visible');
+        for(let i=0; i<4; i++) document.getElementById(`opt-${i}`).disabled = true;
+        if (state.gameMode !== 'test') state.testTotal++;
+        if (selected.isCorrect) {
+            if (state.gameMode === 'test') { state.testCapCorrect++; state.testCorrect++; } else { state.testCorrect++; state.score += 10; }
+            document.getElementById('score-display').innerText = "SCORE: " + state.score;
+            btn.classList.add('correct-anim'); feedback.className = 'correct visible'; feedback.innerText = "CORRECT!"; setTimeout(nextCapitalRound, 1000);
+        } else {
+            btn.classList.add('wrong-anim'); feedback.className = 'wrong visible';
+            const correctCap = state.currentOptions.find(o => o.isCorrect).name.toUpperCase();
+            feedback.innerText = `WRONG. IT IS ${correctCap}`;
+            state.currentOptions.forEach((opt, i) => { if(opt.isCorrect) document.getElementById(`opt-${i}`).classList.add('correct-anim'); });
+            setTimeout(nextCapitalRound, 2000);
+        }
+    }
+    function nextCapitalRound() { state.currentIdx++; if(state.gameMode==='test') loadTestRound(); else loadCapitalRound(); }
+
     function loadTriviaRound() {
         if (state.currentIdx >= state.pool.length) { showReport(); return; }
         const qData = state.pool[state.currentIdx];
@@ -1128,10 +890,8 @@
         for(let i=0; i<4; i++) { const btn = document.getElementById(`triv-${i}`); btn.innerText = state.currentOptions[i].text; btn.classList.remove('correct-anim', 'wrong-anim'); btn.disabled = false; }
     }
     function checkTrivia(idx) {
-        const selected = state.currentOptions[idx];
-        const btn = document.getElementById(`triv-${idx}`);
-        const feedback = document.querySelector('#trivia-game-ui #feedback-bar');
-        feedback.classList.add('visible');
+        const selected = state.currentOptions[idx]; const btn = document.getElementById(`triv-${idx}`);
+        const feedback = document.querySelector('#trivia-game-ui #feedback-bar'); feedback.classList.add('visible');
         for(let i=0; i<4; i++) document.getElementById(`triv-${i}`).disabled = true;
         state.testTotal++;
         if (selected.isCorrect) {
@@ -1142,26 +902,54 @@
             const correctText = state.currentOptions.find(o => o.isCorrect).text;
             feedback.innerText = `WRONG. ANSWER WAS: ${correctText.toUpperCase()}`;
             state.currentOptions.forEach((opt, i) => { if(opt.isCorrect) document.getElementById(`triv-${i}`).classList.add('correct-anim'); });
-            const win = document.getElementById('game-screen'); void win.offsetWidth; win.classList.add('shake-effect'); setTimeout(nextTriviaRound, 3000); 
+            setTimeout(nextTriviaRound, 3000); 
         }
     }
-    function nextTriviaRound() { const win = document.getElementById('game-screen'); win.classList.remove('shake-effect'); state.currentIdx++; loadTriviaRound(); }
+    function nextTriviaRound() { state.currentIdx++; loadTriviaRound(); }
+
+    function toggleFlashMode() { state.fcMode = state.fcMode === 'capitals' ? 'shapes' : 'capitals'; document.getElementById('fc-mode-display').innerText = state.fcMode.toUpperCase(); loadFlashCard(); }
+    function toggleFlashSide() { state.fcStartSide = state.fcStartSide === 'front' ? 'back' : 'front'; document.getElementById('fc-side-display').innerText = state.fcStartSide.toUpperCase(); loadFlashCard(); }
+    function loadFlashCard() { state.fcFlipped = false; renderCardContent(); document.getElementById('fc-count').innerText = `${state.currentIdx + 1} / ${state.pool.length}`; }
+    function flipCard() { state.fcFlipped = !state.fcFlipped; renderCardContent(); }
+    function renderCardContent() {
+        const item = state.pool[state.currentIdx]; const content = document.getElementById('card-content'); content.innerHTML = '';
+        let showFront = !state.fcFlipped; if (state.fcStartSide === 'back') showFront = !showFront;
+        if (state.fcMode === 'capitals') {
+            if (showFront) content.innerHTML = `<div class="card-content-text">${item.name.toUpperCase()}</div><div class="card-content-sub">COUNTRY</div>`;
+            else content.innerHTML = `<div class="card-content-text">${item.capital.toUpperCase()}</div><div class="card-content-sub">CAPITAL</div>`;
+        } else {
+            if (showFront) {
+                const ns = "http://www.w3.org/2000/svg"; const svg = document.createElementNS(ns, "svg");
+                svg.setAttribute("viewBox", "0 0 1000 600");
+                const path = document.createElementNS(ns, "path"); path.setAttribute("d", item.path); path.setAttribute("fill", "#444"); path.setAttribute("stroke", "none");
+                svg.appendChild(path); content.appendChild(svg);
+                setTimeout(() => { try { const bbox = path.getBBox(); const pad = 20; svg.setAttribute("viewBox", `${bbox.x - pad} ${bbox.y - pad} ${bbox.width + (pad*2)} ${bbox.height + (pad*2)}`); } catch(e){} }, 0);
+            } else content.innerHTML = `<div class="card-content-text">${item.name.toUpperCase()}</div>`;
+        }
+    }
+    function nextCard() { state.currentIdx++; if (state.currentIdx >= state.pool.length) state.currentIdx = 0; loadFlashCard(); }
+    function prevCard() { state.currentIdx--; if (state.currentIdx < 0) state.currentIdx = state.pool.length - 1; loadFlashCard(); }
+
+    function loadTestRound() {
+        if (state.currentIdx >= state.pool.length) { showCertificate(); return; }
+        const q = state.pool[state.currentIdx];
+        document.getElementById('map-game-ui').style.display = 'none'; document.getElementById('capitals-game-ui').style.display = 'none';
+        if (q.type === 'map') { document.getElementById('map-game-ui').style.display = 'flex'; document.querySelector('#map-game-ui #feedback-bar').classList.add('visible'); loadMapRound(q.data); } 
+        else { document.getElementById('capitals-game-ui').style.display = 'flex'; loadCapitalRound(q.data); }
+    }
+    function showCertificate() {
+        document.getElementById('cert-caps').innerText = `${state.testCapCorrect}/25`; document.getElementById('cert-maps').innerText = `${state.testMapCorrect}/25`; document.getElementById('cert-total').innerText = `${state.testCorrect}/50`; document.getElementById('cert-modal').style.display = 'flex';
+    }
+    function closeCert() { document.getElementById('cert-modal').style.display = 'none'; quitGame(); }
 
     function showReport() {
-        // Special logic for puzzle score denom
-        let total = state.testTotal;
-        if (state.gameMode === 'puzzle') total = state.puzzleTotalPiecesInPool;
-        
+        let total = state.testTotal; if (state.gameMode === 'puzzle') total = state.puzzleTotalPiecesInPool;
         const pct = total === 0 ? 0 : Math.round((state.testCorrect / total) * 100);
-        document.getElementById('report-percent').innerText = pct + "%";
-        document.getElementById('report-fraction').innerText = `${state.testCorrect} / ${total} Correct`;
-        document.getElementById('report-modal').style.display = 'flex';
+        document.getElementById('report-percent').innerText = pct + "%"; document.getElementById('report-fraction').innerText = `${state.testCorrect} / ${total} Correct`; document.getElementById('report-modal').style.display = 'flex';
     }
-
     function closeReport() { document.getElementById('report-modal').style.display = 'none'; quitGame(); }
 
     loadAllData(); 
-
 </script>
 </body>
 </html>
