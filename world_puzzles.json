@@ -1,0 +1,52 @@
+[
+    {
+        "name": "South America (South)",
+        "base": "Argentina",
+        "pieces": ["Chile", "Uruguay", "Paraguay", "Bolivia"]
+    },
+    {
+        "name": "Western Europe",
+        "base": "France",
+        "pieces": ["Spain", "Germany", "Italy", "Belgium"]
+    },
+    {
+        "name": "North America",
+        "base": "United States",
+        "pieces": ["Canada", "Mexico"]
+    },
+    {
+        "name": "East Asia",
+        "base": "China",
+        "pieces": ["Mongolia", "North Korea", "South Korea", "Japan"]
+    },
+    {
+        "name": "Scandinavia",
+        "base": "Sweden",
+        "pieces": ["Norway", "Finland", "Denmark"]
+    },
+    {
+        "name": "The British Isles",
+        "base": "United Kingdom",
+        "pieces": ["Ireland"]
+    },
+    {
+        "name": "Southern Africa",
+        "base": "South Africa",
+        "pieces": ["Namibia", "Botswana", "Zimbabwe", "Mozambique"]
+    },
+    {
+        "name": "South Asia",
+        "base": "India",
+        "pieces": ["Pakistan", "Nepal", "Bangladesh", "Sri Lanka"]
+    },
+    {
+        "name": "Oceania",
+        "base": "Australia",
+        "pieces": ["New Zealand", "Papua New Guinea"]
+    },
+    {
+        "name": "Horn of Africa",
+        "base": "Ethiopia",
+        "pieces": ["Somalia", "Kenya", "Sudan"]
+    }
+]
