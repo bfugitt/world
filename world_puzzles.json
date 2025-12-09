@@ -1,52 +1,42 @@
 [
     {
-        "name": "South America (South)",
-        "base": "Argentina",
-        "pieces": ["Chile", "Uruguay", "Paraguay", "Bolivia"]
-    },
-    {
-        "name": "Western Europe",
-        "base": "France",
-        "pieces": ["Spain", "Germany", "Italy", "Belgium"]
+        "name": "South America",
+        "base": "Brazil",
+        "pieces": ["Argentina", "Chile", "Uruguay", "Paraguay", "Bolivia", "Peru", "Colombia", "Venezuela"]
     },
     {
         "name": "North America",
-        "base": "United States",
+        "base": "United States of America",
         "pieces": ["Canada", "Mexico"]
     },
     {
         "name": "East Asia",
         "base": "China",
-        "pieces": ["Mongolia", "North Korea", "South Korea", "Japan"]
+        "pieces": ["Mongolia", "Japan", "South Korea", "North Korea", "Taiwan"]
     },
     {
-        "name": "Scandinavia",
-        "base": "Sweden",
-        "pieces": ["Norway", "Finland", "Denmark"]
-    },
-    {
-        "name": "The British Isles",
-        "base": "United Kingdom",
-        "pieces": ["Ireland"]
+        "name": "Western Europe",
+        "base": "France",
+        "pieces": ["Spain", "Germany", "Italy", "United Kingdom", "Ireland", "Portugal", "Belgium", "Netherlands"]
     },
     {
         "name": "Southern Africa",
         "base": "South Africa",
-        "pieces": ["Namibia", "Botswana", "Zimbabwe", "Mozambique"]
+        "pieces": ["Namibia", "Botswana", "Zimbabwe", "Mozambique", "Angola", "Zambia"]
+    },
+    {
+        "name": "Oceania",
+        "base": "Australia",
+        "pieces": ["New Zealand", "Papua New Guinea", "Fiji"]
+    },
+    {
+        "name": "Middle East",
+        "base": "Saudi Arabia",
+        "pieces": ["Yemen", "Oman", "United Arab Emirates", "Iraq", "Jordan", "Syria"]
     },
     {
         "name": "South Asia",
         "base": "India",
         "pieces": ["Pakistan", "Nepal", "Bangladesh", "Sri Lanka"]
-    },
-    {
-        "name": "Oceania",
-        "base": "Australia",
-        "pieces": ["New Zealand", "Papua New Guinea"]
-    },
-    {
-        "name": "Horn of Africa",
-        "base": "Ethiopia",
-        "pieces": ["Somalia", "Kenya", "Sudan"]
     }
 ]
