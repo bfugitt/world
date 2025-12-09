@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MacAtlas World v2.1</title>
+    <title>MacAtlas World v2.2</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -177,6 +177,9 @@
         #map-container path.correct { fill: #444 !important; color: white; }
         #map-container path.highlighted { animation: blink 1s infinite; fill: #888 !important; }
         #map-container path.wrong { fill: #000 !important; }
+        
+        /* New class for fading out non-region countries */
+        path.faded { opacity: 0.1; pointer-events: none; }
 
         /* PUZZLE STYLES */
         #puzzle-area {
@@ -199,6 +202,13 @@
             text-anchor: middle; dominant-baseline: middle; pointer-events: none; 
             text-shadow: 1px 1px 0 #000; opacity: 0; animation: fadeIn 0.5s forwards; font-weight: bold;
         }
+        
+        /* Re-Scramble Button */
+        #rescramble-btn {
+            position: absolute; bottom: 10px; right: 10px; z-index: 100;
+            padding: 5px 10px; font-size: 18px; min-width: auto;
+        }
+
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
         @keyframes blink { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
 
@@ -304,7 +314,7 @@
     <div id="main-window">
         <div id="title-bar">
             <div id="close-btn" onclick="quitGame()"></div>
-            <div id="title-text">MacAtlas World v2.1</div>
+            <div id="title-text">MacAtlas World v2.2</div>
         </div>
 
         <div id="content">
@@ -382,7 +392,9 @@
                 <!-- PUZZLE -->
                 <div id="puzzle-game-ui" style="display:none; width: 100%; flex: 1; min-height: 0; flex-direction: column; align-items: center;">
                     <div style="font-size:24px; margin-bottom:5px; flex-shrink: 0;" id="puzzle-region-name">REGION: EUROPE</div>
-                    <div id="puzzle-area"></div>
+                    <div id="puzzle-area">
+                        <button id="rescramble-btn" class="btn" onclick="rescramblePuzzle()">RE-SCRAMBLE</button>
+                    </div>
                     <div id="feedback-bar" class="visible" style="margin-top:10px;">DRAG THE PIECES TO THE DOTTED LINES</div>
                 </div>
 
@@ -455,7 +467,8 @@
         testTotal: 0, testCorrect: 0, testMapCorrect: 0, testCapCorrect: 0,
         currentOptions: [],
         draggedElement: null, dragOffset: { x: 0, y: 0 }, puzzlePiecesLeft: 0, puzzleTotalPiecesInPool: 0,
-        fcMode: 'capitals', fcStartSide: 'front', fcFlipped: false
+        fcMode: 'capitals', fcStartSide: 'front', fcFlipped: false,
+        regionQuizName: ""
     };
 
     const SVG_WIDTH = 1000, SVG_HEIGHT = 600;
@@ -465,14 +478,11 @@
         document.getElementById(screenId).classList.add('active');
     }
 
-    // --- INITIALIZATION (ROBUST LOADING) ---
     async function loadAllData() {
         const errorEl = document.getElementById('error-display');
         let errorMsg = "";
-
         const safeFetch = async (file) => {
             try {
-                // Use strict relative path
                 const res = await fetch(file);
                 if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
                 return await res.json();
@@ -482,20 +492,14 @@
                 return [];
             }
         };
-
-        // Load Files
         state.allData = await safeFetch('world110.json');
         state.triviaData = await safeFetch('world_trivia.json');
         state.puzzleData = await safeFetch('world_puzzle.json');
-
         if (errorMsg) {
             errorEl.style.display = 'block';
-            errorEl.innerText = "ERROR LOADING DATA: " + errorMsg + ". Check your file names and folder structure.";
+            errorEl.innerText = "ERROR LOADING DATA: " + errorMsg;
         }
-
-        if (state.allData.length > 0) {
-            renderMap();
-        }
+        if (state.allData.length > 0) renderMap();
     }
 
     function renderMap() {
@@ -588,22 +592,15 @@
 
     // GAME LOOP
     function startGame(mode) {
-        // SAFETY CHECK
-        if (state.allData.length === 0) { 
-            alert("Data not loaded. Please check the files."); 
-            return; 
-        }
-        if ((mode === 'trivia' && state.triviaData.length === 0) || 
-            (mode === 'puzzle' && state.puzzleData.length === 0) ||
-            (mode === 'region_quiz' && state.puzzleData.length === 0)) {
-            alert("This specific game mode data failed to load."); 
-            return;
-        }
-
+        if (state.allData.length === 0) { alert("Data not loaded."); return; }
+        
         state.gameMode = mode; state.score = 0; state.testTotal = 0; state.testCorrect = 0;
         state.testMapCorrect = 0; state.testCapCorrect = 0; state.startTime = Date.now(); state.currentIdx = 0;
-        resetZoom();
+        resetZoom(); // Reset view initially
         document.getElementById('hud').style.display = 'flex';
+
+        // Clear faded classes from map
+        document.querySelectorAll('#map-container path').forEach(p => p.classList.remove('faded'));
 
         // POOL LOGIC
         if (mode === 'map' || mode === 'capitals') {
@@ -620,10 +617,15 @@
             let all = [...state.allData].sort(() => 0.5 - Math.random());
             state.pool = [...all.slice(0,25).map(s=>({type:'capital',data:s})), ...all.slice(25,50).map(s=>({type:'map',data:s}))].sort(() => 0.5 - Math.random());
         } else if (mode === 'region_quiz') {
-            // Pick a random region from puzzle data
+            // Pick region, get countries
             const region = state.puzzleData[Math.floor(Math.random() * state.puzzleData.length)];
             state.regionQuizName = region.name;
-            state.pool = region.pieces.map(pName => state.allData.find(s => s.name === pName)).filter(s => s);
+            const regionCountries = region.pieces.concat([region.base]);
+            // Filter pool
+            state.pool = regionCountries.map(pName => state.allData.find(s => s.name === pName)).filter(s => s);
+            
+            // FADE OUT OTHERS AND ZOOM
+            isolateRegionOnMap(state.pool);
         } else if (mode === 'practice') {
             state.pool = [];
         }
@@ -664,6 +666,8 @@
         document.getElementById('cert-modal').style.display = 'none';
         document.getElementById('practice-modal').style.display = 'none';
         showScreen('menu-screen');
+        // Clear fade
+        document.querySelectorAll('#map-container path').forEach(p => p.classList.remove('faded'));
     }
 
     function updateTimer() {
@@ -673,18 +677,53 @@
         document.getElementById('timer-display').innerText = `TIME: ${m}:${s}`;
     }
 
+    // --- REGION QUIZ UTILS ---
+    function isolateRegionOnMap(countries) {
+        // 1. Fade others
+        const allPaths = document.querySelectorAll('#map-container path');
+        allPaths.forEach(p => {
+            const name = p.getAttribute('data-name');
+            const isInRegion = countries.some(c => c.name === name);
+            if (!isInRegion) p.classList.add('faded');
+            else p.classList.remove('faded');
+        });
+
+        // 2. Zoom to bounding box of these countries
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        let found = false;
+        
+        countries.forEach(c => {
+            const el = document.getElementById("map-" + c.name.replace(/\s/g, ''));
+            if(el) {
+                try {
+                    const bbox = el.getBBox();
+                    if (bbox.x < minX) minX = bbox.x;
+                    if (bbox.y < minY) minY = bbox.y;
+                    if (bbox.x + bbox.width > maxX) maxX = bbox.x + bbox.width;
+                    if (bbox.y + bbox.height > maxY) maxY = bbox.y + bbox.height;
+                    found = true;
+                } catch(e){}
+            }
+        });
+
+        if (found) {
+            const pad = 50;
+            const w = maxX - minX + (pad*2);
+            const h = maxY - minY + (pad*2);
+            state.viewBox = { x: minX - pad, y: minY - pad, w: w, h: h };
+            updateViewBox();
+        }
+    }
+
     // --- PRACTICE MODE ---
     function showPracticeInfo(country) {
         document.getElementById('prac-name').innerText = country.name.toUpperCase();
         document.getElementById('prac-capital').innerText = country.capital.toUpperCase();
-        
-        // Find trivia
         let t = null;
         if(state.triviaData && state.triviaData.length > 0) {
             t = state.triviaData.find(t => t.state === country.name);
         }
         document.getElementById('prac-trivia').innerText = t ? t.question + " Answer: " + t.answer : "Did you know? " + country.name + " is amazing!";
-        
         document.getElementById('practice-modal').style.display = 'flex';
     }
     function closePractice() { document.getElementById('practice-modal').style.display = 'none'; }
@@ -707,10 +746,6 @@
             feedback.innerText = `REGION: ${state.regionQuizName.toUpperCase()} - FIND ${target.name.toUpperCase()}`;
         } else {
             feedback.innerText = `FIND: ${target.name.toUpperCase()}`;
-        }
-        
-        if (state.gameMode === 'region_quiz' && state.currentIdx === 0) {
-            if(state.currentIdx === 0) resetZoom(); 
         }
     }
 
@@ -745,13 +780,16 @@
                 const cEl = document.getElementById(cID); if(cEl) cEl.classList.add('highlighted');
                 setTimeout(nextMapRound, 2000);
             } else {
+                const win = document.getElementById('game-screen');
+                win.classList.remove('shake-effect'); void win.offsetWidth; win.classList.add('shake-effect');
+                
                 if (state.roundAttempts === 0) {
-                    state.roundAttempts++; feedback.innerText = `THAT IS ${clickedState.name.toUpperCase()}. TRY AGAIN.`;
+                    state.roundAttempts++; feedback.classList.add('wrong', 'visible'); feedback.innerText = `THAT IS ${clickedState.name.toUpperCase()}. TRY AGAIN.`;
                 } else {
                     state.roundResolved = true;
                     const cID = "map-"+correct.name.replace(/\s/g,'');
                     const cEl = document.getElementById(cID); if(cEl) cEl.classList.add('highlighted');
-                    feedback.innerText = `WRONG. THAT WAS ${correct.name.toUpperCase()}.`;
+                    feedback.classList.add('wrong', 'visible'); feedback.innerText = `WRONG. THAT WAS ${correct.name.toUpperCase()}.`;
                     setTimeout(nextMapRound, 2500);
                 }
             }
@@ -767,7 +805,13 @@
         const feedback = document.querySelector('#puzzle-game-ui #feedback-bar');
         feedback.innerText = "DRAG THE PIECES TO THE DOTTED LINES"; feedback.className = 'visible';
         
-        const container = document.getElementById('puzzle-area'); container.innerHTML = '';
+        const container = document.getElementById('puzzle-area'); 
+        // Only clear if loading new round
+        // But we need to keep "RE-SCRAMBLE" button.
+        const btn = document.getElementById('rescramble-btn');
+        container.innerHTML = ''; 
+        container.appendChild(btn);
+
         const ns = "http://www.w3.org/2000/svg";
         const svg = document.createElementNS(ns, "svg");
         svg.setAttribute("width", "100%"); svg.setAttribute("height", "100%");
@@ -792,6 +836,7 @@
             const piece = document.createElementNS(ns, "path");
             piece.setAttribute("d", p.path); piece.setAttribute("class", "puzzle-piece");
             piece.setAttribute("data-id", p.name); 
+            // Save initial random for rescramble
             const offsetX = (Math.random() * 100) - 50; const offsetY = (Math.random() * 100) - 50;
             piece.dataset.tx = offsetX; piece.dataset.ty = offsetY;
             piece.setAttribute("transform", `translate(${offsetX}, ${offsetY})`);
@@ -817,6 +862,17 @@
         svg.addEventListener('mousemove', drag); svg.addEventListener('touchmove', drag, {passive: false});
         svg.addEventListener('mouseup', endDrag); svg.addEventListener('touchend', endDrag); svg.addEventListener('mouseleave', endDrag);
     }
+
+    function rescramblePuzzle() {
+        const pieces = document.querySelectorAll('.puzzle-piece:not(.snapped)');
+        pieces.forEach(p => {
+            const offsetX = (Math.random() * 100) - 50; 
+            const offsetY = (Math.random() * 100) - 50;
+            p.dataset.tx = offsetX; p.dataset.ty = offsetY;
+            p.setAttribute("transform", `translate(${offsetX}, ${offsetY})`);
+        });
+    }
+
     // Puzzle Helpers
     function addLabelToPuzzlePiece(pathElement, text, svgContainer) {
         try {
