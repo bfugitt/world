@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MacAtlas World v2.2</title>
+    <title>MacAtlas World v2.3</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -166,6 +166,16 @@
         
         .zoom-btn:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 rgba(0,0,0,0.5); }
         
+        /* New Region Switcher Button */
+        #region-switch-btn {
+            position: absolute; top: 10px; right: 10px; z-index: 100;
+            padding: 5px 10px; font-size: 18px; min-width: auto;
+            background: #fff; border: 2px solid #000; cursor: pointer;
+            font-family: 'VT323', monospace;
+            box-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+            display: none; /* Hidden by default, shown in Region Quiz */
+        }
+
         svg { width: 100%; height: 100%; display: block; }
 
         path {
@@ -178,7 +188,6 @@
         #map-container path.highlighted { animation: blink 1s infinite; fill: #888 !important; }
         #map-container path.wrong { fill: #000 !important; }
         
-        /* New class for fading out non-region countries */
         path.faded { opacity: 0.1; pointer-events: none; }
 
         /* PUZZLE STYLES */
@@ -203,7 +212,6 @@
             text-shadow: 1px 1px 0 #000; opacity: 0; animation: fadeIn 0.5s forwards; font-weight: bold;
         }
         
-        /* Re-Scramble Button */
         #rescramble-btn {
             position: absolute; bottom: 10px; right: 10px; z-index: 100;
             padding: 5px 10px; font-size: 18px; min-width: auto;
@@ -314,7 +322,7 @@
     <div id="main-window">
         <div id="title-bar">
             <div id="close-btn" onclick="quitGame()"></div>
-            <div id="title-text">MacAtlas World v2.2</div>
+            <div id="title-text">MacAtlas World v2.3</div>
         </div>
 
         <div id="content">
@@ -354,6 +362,8 @@
                             <div class="zoom-btn" onclick="zoomMap(0.8)">-</div>
                             <div class="zoom-btn" onclick="resetZoom()">R</div>
                         </div>
+                        <!-- SWITCH REGION BUTTON (NEW) -->
+                        <button id="region-switch-btn" onclick="switchRegion()">SWITCH REGION</button>
                     </div>
                     <div id="feedback-bar" class="visible">Locating Data...</div>
                 </div>
@@ -519,8 +529,12 @@
 
         const container = document.getElementById('map-container');
         const controls = container.querySelector('#zoom-controls');
+        // keep switch button
+        const switcher = container.querySelector('#region-switch-btn');
+        
         container.innerHTML = '';
         if(controls) container.appendChild(controls);
+        if(switcher) container.appendChild(switcher);
         container.appendChild(svg);
 
         container.addEventListener('mousedown', startPan);
@@ -548,7 +562,7 @@
     
     let isClick = true;
     function startPan(e) {
-        if (e.target.closest('#zoom-controls')) return;
+        if (e.target.closest('#zoom-controls') || e.target.closest('#region-switch-btn')) return;
         e.preventDefault(); state.isPanning = true; isClick = true;
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -598,6 +612,7 @@
         state.testMapCorrect = 0; state.testCapCorrect = 0; state.startTime = Date.now(); state.currentIdx = 0;
         resetZoom(); // Reset view initially
         document.getElementById('hud').style.display = 'flex';
+        document.getElementById('region-switch-btn').style.display = 'none';
 
         // Clear faded classes from map
         document.querySelectorAll('#map-container path').forEach(p => p.classList.remove('faded'));
@@ -617,15 +632,7 @@
             let all = [...state.allData].sort(() => 0.5 - Math.random());
             state.pool = [...all.slice(0,25).map(s=>({type:'capital',data:s})), ...all.slice(25,50).map(s=>({type:'map',data:s}))].sort(() => 0.5 - Math.random());
         } else if (mode === 'region_quiz') {
-            // Pick region, get countries
-            const region = state.puzzleData[Math.floor(Math.random() * state.puzzleData.length)];
-            state.regionQuizName = region.name;
-            const regionCountries = region.pieces.concat([region.base]);
-            // Filter pool
-            state.pool = regionCountries.map(pName => state.allData.find(s => s.name === pName)).filter(s => s);
-            
-            // FADE OUT OTHERS AND ZOOM
-            isolateRegionOnMap(state.pool);
+            initRegionQuiz();
         } else if (mode === 'practice') {
             state.pool = [];
         }
@@ -666,7 +673,6 @@
         document.getElementById('cert-modal').style.display = 'none';
         document.getElementById('practice-modal').style.display = 'none';
         showScreen('menu-screen');
-        // Clear fade
         document.querySelectorAll('#map-container path').forEach(p => p.classList.remove('faded'));
     }
 
@@ -678,25 +684,43 @@
     }
 
     // --- REGION QUIZ UTILS ---
+    function initRegionQuiz() {
+        document.getElementById('region-switch-btn').style.display = 'block';
+        pickNewRegion();
+    }
+
+    function switchRegion() {
+        // Just pick a new one randomly for now
+        pickNewRegion();
+        loadMapRound(); // reload UI
+    }
+
+    function pickNewRegion() {
+        const region = state.puzzleData[Math.floor(Math.random() * state.puzzleData.length)];
+        state.regionQuizName = region.name;
+        // concat base + pieces
+        const regionCountries = region.pieces.concat([region.base]);
+        // filter valid objects
+        state.pool = regionCountries.map(pName => state.allData.find(s => s.name === pName)).filter(s => s);
+        state.currentIdx = 0; // reset index for new region
+        
+        isolateRegionOnMap(state.pool);
+    }
+
     function isolateRegionOnMap(countries) {
-        // 1. Fade others
         const allPaths = document.querySelectorAll('#map-container path');
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        let found = false;
+
         allPaths.forEach(p => {
             const name = p.getAttribute('data-name');
             const isInRegion = countries.some(c => c.name === name);
             if (!isInRegion) p.classList.add('faded');
-            else p.classList.remove('faded');
-        });
-
-        // 2. Zoom to bounding box of these countries
-        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        let found = false;
-        
-        countries.forEach(c => {
-            const el = document.getElementById("map-" + c.name.replace(/\s/g, ''));
-            if(el) {
+            else {
+                p.classList.remove('faded');
+                // Calculate bounds for zoom
                 try {
-                    const bbox = el.getBBox();
+                    const bbox = p.getBBox();
                     if (bbox.x < minX) minX = bbox.x;
                     if (bbox.y < minY) minY = bbox.y;
                     if (bbox.x + bbox.width > maxX) maxX = bbox.x + bbox.width;
@@ -707,11 +731,16 @@
         });
 
         if (found) {
-            const pad = 50;
+            // Add padding to calculation
+            const pad = 30;
             const w = maxX - minX + (pad*2);
             const h = maxY - minY + (pad*2);
+            // Apply zoom
             state.viewBox = { x: minX - pad, y: minY - pad, w: w, h: h };
             updateViewBox();
+        } else {
+            // Fallback if bounds calc fails
+            resetZoom();
         }
     }
 
@@ -731,12 +760,16 @@
     // --- MAP GAME ---
     function loadMapRound(overrideData) {
         state.roundAttempts = 0; state.roundResolved = false;
+        // Don't clear faded status here, only highlight/wrong
         document.querySelectorAll('path').forEach(p => { p.classList.remove('highlighted', 'wrong', 'correct'); });
         
         let target;
         if (state.gameMode === 'test') target = overrideData;
         else {
-            if (state.currentIdx >= state.pool.length) { showReport(); return; }
+            if (state.currentIdx >= state.pool.length) { 
+                // If region quiz, maybe switch region or end? Let's just show report for now.
+                showReport(); return; 
+            }
             target = state.pool[state.currentIdx];
         }
         
@@ -806,8 +839,6 @@
         feedback.innerText = "DRAG THE PIECES TO THE DOTTED LINES"; feedback.className = 'visible';
         
         const container = document.getElementById('puzzle-area'); 
-        // Only clear if loading new round
-        // But we need to keep "RE-SCRAMBLE" button.
         const btn = document.getElementById('rescramble-btn');
         container.innerHTML = ''; 
         container.appendChild(btn);
@@ -836,7 +867,6 @@
             const piece = document.createElementNS(ns, "path");
             piece.setAttribute("d", p.path); piece.setAttribute("class", "puzzle-piece");
             piece.setAttribute("data-id", p.name); 
-            // Save initial random for rescramble
             const offsetX = (Math.random() * 100) - 50; const offsetY = (Math.random() * 100) - 50;
             piece.dataset.tx = offsetX; piece.dataset.ty = offsetY;
             piece.setAttribute("transform", `translate(${offsetX}, ${offsetY})`);
