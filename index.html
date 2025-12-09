@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MacAtlas World</title>
+    
+    <!-- FONTS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+
+    <!-- LIBRARIES FOR MAP PROCESSING -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://unpkg.com/topojson@3"></script>
+
+    <style>
+        :root {
+            --bg-color: #888;
+            --window-bg: #ffffff;
+            --border-color: #000000;
+        }
+        
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'VT323', monospace;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh; 
+            height: 100dvh;
+            overflow: hidden; 
+            background-image: 
+                linear-gradient(45deg, #aaa 25%, transparent 25%), 
+                linear-gradient(-45deg, #aaa 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #aaa 75%), 
+                linear-gradient(-45deg, transparent 75%, #aaa 75%);
+            background-size: 2px 2px;
+            user-select: none;
+        }
+
+        /* RETRO MAC WINDOW */
+        #main-window {
+            width: 95%;
+            max-width: 1000px; /* Slightly wider for world map */
+            height: 90vh;
+            background: var(--window-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 4px;
+            box-shadow: 5px 5px 0px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        #title-bar {
+            background: repeating-linear-gradient(to bottom, #000, #000 1px, #fff 1px, #fff 2px);
+            height: 24px;
+            border-bottom: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            cursor: default;
+            flex-shrink: 0;
+        }
+
+        #title-text {
+            background: #fff;
+            padding: 0 10px;
+            font-size: 18px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        #close-btn {
+            position: absolute;
+            left: 6px;
+            width: 12px;
+            height: 12px;
+            border: 1px solid #000;
+            background: #fff;
+            box-shadow: 1px 1px 0 #000;
+        }
+
+        /* CONTENT AREA */
+        #content {
+            flex: 1;
+            padding: 20px;
+            overflow: hidden; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .screen {
+            display: none;
+            width: 100%;
+            flex: 1; 
+            min-height: 0; 
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .screen.active { display: flex; }
+
+        h1 {
+            font-size: 48px;
+            margin: 10px 0;
+            text-align: center;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 0 #ccc;
+        }
+
+        .btn {
+            background: #fff;
+            border: 2px solid #000;
+            padding: 10px 30px;
+            margin: 5px;
+            font-family: 'VT323', monospace;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 3px 3px 0 #000;
+            transition: transform 0.1s, box-shadow 0.1s;
+            min-width: 250px;
+            text-align: center;
+        }
+
+        .btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 #000; }
+        .btn:hover { background: #eee; }
+
+        #hud {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 2px dashed #000;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        /* MAP CONTAINER */
+        #map-container {
+            flex: 1;
+            width: 100%;
+            position: relative;
+            background: #f0f8ff; /* Ocean Color */
+            border: 2px solid #000;
+            overflow: hidden;
+            touch-action: none;
+            cursor: grab;
+        }
+
+        #map-container:active { cursor: grabbing; }
+        
+        #zoom-controls {
+            position: absolute;
+            bottom: 10px; right: 10px;
+            display: flex; flex-direction: column; gap: 5px; z-index: 100;
+        }
+
+        .zoom-btn {
+            width: 32px; height: 32px;
+            background: #fff; border: 2px solid #000;
+            font-family: 'VT323', monospace; font-size: 24px;
+            line-height: 24px; text-align: center; cursor: pointer;
+            box-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+            display: flex; justify-content: center; align-items: center;
+        }
+        
+        .zoom-btn:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 rgba(0,0,0,0.5); }
+        
+        svg { width: 100%; height: 100%; display: block; }
+
+        path {
+            fill: #fff;
+            stroke: #000;
+            stroke-width: 0.5; /* Thinner strokes for world map */
+            cursor: pointer;
+            transition: fill 0.2s;
+            vector-effect: non-scaling-stroke;
+        }
+        
+        #map-container path:hover { fill: #ddd; }
+        #map-container path.correct { fill: #444 !important; color: white; }
+        #map-container path.highlighted { animation: blink 1s infinite; fill: #888 !important; }
+        #map-container path.wrong { fill: #000 !important; }
+
+        /* PUZZLE STYLES */
+        #puzzle-area {
+            flex: 1; width: 100%; border: 2px solid #000;
+            background: #f0f8ff; position: relative;
+            overflow: hidden; touch-action: none; min-height: 0;
+        }
+
+        .puzzle-base { fill: #444; stroke: #000; stroke-width: 0.5; }
+        .puzzle-target { fill: none; stroke: #888; stroke-width: 0.5; stroke-dasharray: 3,3; }
+        .puzzle-piece {
+            fill: #fff; stroke: #000; stroke-width: 0.5;
+            cursor: grab; filter: drop-shadow(3px 3px 0px rgba(0,0,0,0.3));
+            transition: transform 0.1s;
+        }
+        .puzzle-piece.dragging {
+            cursor: grabbing; fill: #eee;
+            filter: drop-shadow(5px 5px 0px rgba(0,0,0,0.5));
+            transition: none; z-index: 1000;
+        }
+        .puzzle-piece.snapped { fill: #444; cursor: default; filter: none; transition: fill 0.5s; }
+        .puzzle-label {
+            font-family: 'VT323', monospace; fill: #fff; font-size: 12px;
+            text-anchor: middle; dominant-baseline: middle; pointer-events: none; 
+            text-shadow: 1px 1px 0 #000; opacity: 0; animation: fadeIn 0.5s forwards; font-weight: bold;
+        }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
+        @keyframes blink { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+
+        /* FEEDBACK */
+        #feedback-bar {
+            margin-top: 10px; width: 100%; height: 40px; border: 2px solid #000;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px; background: #eee; transition: background 0.2s;
+            visibility: hidden; flex-shrink: 0; 
+        }
+        #feedback-bar.visible { visibility: visible; }
+        #feedback-bar.correct { background: #000; color: #fff; }
+        #feedback-bar.wrong { background: repeating-linear-gradient(45deg, #fff, #fff 10px, #ccc 10px, #ccc 20px); color: #000; font-weight: bold; }
+
+        /* QUIZ UI */
+        .quiz-area {
+            flex: 1; width: 100%; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; overflow: hidden; 
+        }
+        #capital-prompt, #trivia-prompt { font-size: 28px; margin-bottom: 10px; text-align: center; max-width: 800px; line-height: 1.2; }
+        #capital-state-preview {
+            height: 200px; width: 100%; max-width: 400px; margin: 10px 0;
+            display: flex; justify-content: center; align-items: center;
+        }
+        #capital-state-preview svg { filter: drop-shadow(4px 4px 0px rgba(0,0,0,0.2)); }
+        #capital-state-preview path { fill: #ddd; stroke: #000; stroke-width: 1; cursor: default; }
+        #capital-state-name, #trivia-state-name { font-size: 48px; font-weight: bold; margin-bottom: 20px; text-decoration: underline; text-align: center; }
+        #options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; max-width: 600px; }
+        .option-btn {
+            background: #fff; border: 2px solid #000; padding: 12px;
+            font-family: 'VT323', monospace; font-size: 20px; cursor: pointer;
+            box-shadow: 4px 4px 0 #000; transition: all 0.1s; text-align: center;
+            display: flex; align-items: center; justify-content: center; min-height: 60px; line-height: 1.1;
+        }
+        .option-btn:hover { background: #eee; }
+        .option-btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 #000; }
+        .option-btn.correct-anim { background: #000; color: #fff; }
+        .option-btn.wrong-anim { opacity: 0.5; background: #aaa; text-decoration: line-through; }
+
+        /* FLASHCARDS */
+        #flashcard-container { flex: 1; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        #the-card {
+            width: 80%; max-width: 500px; height: 300px; border: 2px solid #000; background: #fff;
+            box-shadow: 10px 10px 0 rgba(0,0,0,0.1); display: flex; flex-direction: column;
+            align-items: center; justify-content: center; cursor: pointer; margin-bottom: 20px;
+            transition: transform 0.1s; position: relative; padding: 20px; text-align: center;
+        }
+        #the-card:active { transform: scale(0.98); }
+        .card-content-text { font-size: 40px; font-weight: bold; }
+        .card-content-sub { font-size: 20px; color: #666; margin-top: 10px; }
+        .controls-row { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; justify-content: center; }
+
+        /* MODALS */
+        #report-modal, #cert-modal {
+            display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255,255,255,0.9); z-index: 100; flex-direction: column;
+            justify-content: center; align-items: center;
+        }
+        #report-card, #cert-card {
+            background: #fff; border: 4px double #000; padding: 40px; text-align: center; box-shadow: 10px 10px 0 rgba(0,0,0,0.2); max-width: 90%;
+        }
+        #cert-card { border: 10px solid #000; background-image: radial-gradient(#eee 10%, transparent 10%); background-size: 10px 10px; }
+        .shake-effect { animation: shake 0.5s; }
+        @keyframes shake { 0% { transform: translate(1px, 1px) rotate(0deg); } 100% { transform: translate(1px, -2px) rotate(-1deg); } }
+    </style>
+</head>
+<body>
+
+    <div id="main-window">
+        <div id="title-bar">
+            <div id="close-btn" onclick="quitGame()"></div>
+            <div id="title-text">MacAtlas: World Edition</div>
+        </div>
+
+        <div id="content">
+
+            <!-- MENU -->
+            <div id="menu-screen" class="screen active">
+                <h1>MacAtlas World</h1>
+                <p style="text-align:center; font-size: 20px;">PLANETARY EDITION</p>
+                <div style="height: 10px;"></div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <button class="btn" onclick="startGame('map')">FIND COUNTRY</button>
+                    <button class="btn" onclick="startGame('capitals')">NAME CAPITAL</button>
+                    <button class="btn" onclick="startGame('puzzle')">CONTINENT PUZZLE</button>
+                    <button class="btn" onclick="startGame('flashcards')">FLASH CARDS</button>
+                    <button class="btn" onclick="startGame('test')">FULL TEST (50)</button>
+                </div>
+            </div>
+
+            <!-- GAME HUD/SCREENS -->
+            <div id="game-screen" class="screen">
+                <div id="hud">
+                    <span id="score-display">SCORE: 000</span>
+                    <span id="timer-display">TIME: 00:00</span>
+                    <button style="font-family:'VT323'; background:none; border:1px solid #000; cursor:pointer;" onclick="quitGame()">QUIT</button>
+                </div>
+
+                <!-- MAP MODE -->
+                <div id="map-game-ui" style="display:none; width: 100%; flex: 1; min-height: 0; flex-direction: column;">
+                    <div id="map-container">
+                        <!-- SVG injected here -->
+                        <div id="zoom-controls">
+                            <div class="zoom-btn" onclick="zoomMap(1.2)">+</div>
+                            <div class="zoom-btn" onclick="zoomMap(0.8)">-</div>
+                            <div class="zoom-btn" onclick="resetZoom()">R</div>
+                        </div>
+                    </div>
+                    <div id="feedback-bar" class="visible">Loading Map Data...</div>
+                </div>
+
+                <!-- CAPITALS MODE -->
+                <div id="capitals-game-ui" style="display:none; width: 100%; flex: 1; min-height: 0; flex-direction: column; align-items: center;">
+                    <div class="quiz-area">
+                        <div id="capital-prompt">WHAT IS THE CAPITAL OF</div>
+                        <div id="capital-state-preview"></div>
+                        <div id="capital-state-name">FRANCE</div>
+                        
+                        <div id="options-grid">
+                            <button class="option-btn" id="opt-0" onclick="checkCapital(0)">PARIS</button>
+                            <button class="option-btn" id="opt-1" onclick="checkCapital(1)">LONDON</button>
+                            <button class="option-btn" id="opt-2" onclick="checkCapital(2)">BERLIN</button>
+                            <button class="option-btn" id="opt-3" onclick="checkCapital(3)">MADRID</button>
+                        </div>
+                    </div>
+                    <div id="feedback-bar" style="margin-top:auto;"></div>
+                </div>
+
+                <!-- PUZZLE MODE -->
+                <div id="puzzle-game-ui" style="display:none; width: 100%; flex: 1; min-height: 0; flex-direction: column; align-items: center;">
+                    <div style="font-size:24px; margin-bottom:5px; flex-shrink: 0;" id="puzzle-region-name">REGION: EUROPE</div>
+                    <div id="puzzle-area">
+                        <!-- SVG injected here -->
+                    </div>
+                    <div id="feedback-bar" class="visible" style="margin-top:10px;">DRAG THE COUNTRIES TO THE DOTTED LINES</div>
+                </div>
+
+                <!-- FLASH CARDS -->
+                <div id="flashcards-ui" style="display:none; width: 100%; flex: 1; min-height: 0; flex-direction: column; align-items: center;">
+                    <div class="controls-row">
+                        <button class="btn" style="min-width:100px; padding:5px;" onclick="toggleFlashMode()">MODE: <span id="fc-mode-display">CAPITALS</span></button>
+                        <button class="btn" style="min-width:100px; padding:5px;" onclick="toggleFlashSide()">START: <span id="fc-side-display">FRONT</span></button>
+                    </div>
+                    
+                    <div id="flashcard-container">
+                        <div id="the-card" onclick="flipCard()">
+                            <div id="card-content">FRONT</div>
+                            <div class="card-hint">(CLICK TO FLIP)</div>
+                        </div>
+                    </div>
+
+                    <div class="controls-row">
+                        <button class="btn" style="min-width:80px;" onclick="prevCard()">&lt; PREV</button>
+                        <span id="fc-count" style="align-self:center; font-size:24px;">1 / 50</span>
+                        <button class="btn" style="min-width:80px;" onclick="nextCard()">NEXT &gt;</button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- MODALS -->
+            <div id="report-modal">
+                <div id="report-card">
+                    <h2>REPORT CARD</h2>
+                    <h1 id="report-percent" style="font-size:80px; margin: 10px 0;">100%</h1>
+                    <p id="report-fraction">10 / 10 Correct</p>
+                    <button class="btn" onclick="closeReport()">OK</button>
+                </div>
+            </div>
+
+            <div id="cert-modal">
+                <div id="cert-card">
+                    <h2>OFFICIAL CERTIFICATE</h2>
+                    <p>THIS CERTIFIES THAT</p>
+                    <h1 style="text-decoration:underline;">THE STUDENT</h1>
+                    <p>HAS COMPLETED THE COMPREHENSIVE</p>
+                    <h3>MACATLAS WORLD TEST</h3>
+                    <div style="border-top: 2px solid #000; border-bottom: 2px solid #000; margin: 20px 0; padding: 10px;">
+                        <p>CAPITALS: <span id="cert-caps">25/25</span></p>
+                        <p>MAP SKILLS: <span id="cert-maps">25/25</span></p>
+                        <p style="font-size:32px; font-weight:bold;">TOTAL SCORE: <span id="cert-total">50/50</span></p>
+                    </div>
+                    <button class="btn" onclick="closeCert()">PRINT (CLOSE)</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+<script>
+    // --- CAPITAL DATA LOOKUP ---
+    // Mapping commonly used TopoJSON names to Capitals
+    const CAPITAL_DB = {
+        "Afghanistan": "Kabul", "Albania": "Tirana", "Algeria": "Algiers", "Angola": "Luanda", "Argentina": "Buenos Aires", "Armenia": "Yerevan", "Australia": "Canberra", "Austria": "Vienna", "Azerbaijan": "Baku",
+        "Bangladesh": "Dhaka", "Belarus": "Minsk", "Belgium": "Brussels", "Belize": "Belmopan", "Benin": "Porto-Novo", "Bhutan": "Thimphu", "Bolivia": "Sucre", "Bosnia and Herz.": "Sarajevo", "Botswana": "Gaborone", "Brazil": "Brasilia", "Bulgaria": "Sofia", "Burkina Faso": "Ouagadougou", "Burundi": "Gitega",
+        "Cambodia": "Phnom Penh", "Cameroon": "Yaounde", "Canada": "Ottawa", "Central African Rep.": "Bangui", "Chad": "N'Djamena", "Chile": "Santiago", "China": "Beijing", "Colombia": "Bogota", "Congo": "Brazzaville", "Costa Rica": "San Jose", "Croatia": "Zagreb", "Cuba": "Havana", "Cyprus": "Nicosia", "Czechia": "Prague",
+        "Dem. Rep. Congo": "Kinshasa", "Denmark": "Copenhagen", "Djibouti": "Djibouti", "Dominican Rep.": "Santo Domingo",
+        "Ecuador": "Quito", "Egypt": "Cairo", "El Salvador": "San Salvador", "Eq. Guinea": "Malabo", "Eritrea": "Asmara", "Estonia": "Tallinn", "Ethiopia": "Addis Ababa",
+        "Fiji": "Suva", "Finland": "Helsinki", "France": "Paris",
+        "Gabon": "Libreville", "Gambia": "Banjul", "Georgia": "Tbilisi", "Germany": "Berlin", "Ghana": "Accra", "Greece": "Athens", "Guatemala": "Guatemala City", "Guinea": "Conakry", "Guinea-Bissau": "Bissau", "Guyana": "Georgetown",
+        "Haiti": "Port-au-Prince", "Honduras": "Tegucigalpa", "Hungary": "Budapest",
+        "Iceland": "Reykjavik", "India": "New Delhi", "Indonesia": "Jakarta", "Iran": "Tehran", "Iraq": "Baghdad", "Ireland": "Dublin", "Israel": "Jerusalem", "Italy": "Rome", "Ivory Coast": "Yamoussoukro",
+        "Jamaica": "Kingston", "Japan": "Tokyo", "Jordan": "Amman",
+        "Kazakhstan": "Astana", "Kenya": "Nairobi", "Kosovo": "Pristina", "Kuwait": "Kuwait City", "Kyrgyzstan": "Bishkek",
+        "Laos": "Vientiane", "Latvia": "Riga", "Lebanon": "Beirut", "Lesotho": "Maseru", "Liberia": "Monrovia", "Libya": "Tripoli", "Lithuania": "Vilnius", "Luxembourg": "Luxembourg",
+        "Macedonia": "Skopje", "Madagascar": "Antananarivo", "Malawi": "Lilongwe", "Malaysia": "Kuala Lumpur", "Mali": "Bamako", "Mauritania": "Nouakchott", "Mexico": "Mexico City", "Moldova": "Chisinau", "Mongolia": "Ulaanbaatar", "Montenegro": "Podgorica", "Morocco": "Rabat", "Mozambique": "Maputo", "Myanmar": "Naypyidaw",
+        "Namibia": "Windhoek", "Nepal": "Kathmandu", "Netherlands": "Amsterdam", "New Zealand": "Wellington", "Nicaragua": "Managua", "Niger": "Niamey", "Nigeria": "Abuja", "North Korea": "Pyongyang", "Norway": "Oslo",
+        "Oman": "Muscat",
+        "Pakistan": "Islamabad", "Palestine": "Ramallah", "Panama": "Panama City", "Papua New Guinea": "Port Moresby", "Paraguay": "Asuncion", "Peru": "Lima", "Philippines": "Manila", "Poland": "Warsaw", "Portugal": "Lisbon",
+        "Qatar": "Doha",
+        "Romania": "Bucharest", "Russia": "Moscow", "Rwanda": "Kigali",
+        "S. Sudan": "Juba", "Saudi Arabia": "Riyadh", "Senegal": "Dakar", "Serbia": "Belgrade", "Sierra Leone": "Freetown", "Slovakia": "Bratislava", "Slovenia": "Ljubljana", "Solomon Is.": "Honiara", "Somalia": "Mogadishu", "South Africa": "Pretoria", "South Korea": "Seoul", "Spain": "Madrid", "Sri Lanka": "Colombo", "Sudan": "Khartoum", "Suriname": "Paramaribo", "Swaziland": "Mbabane", "Sweden": "Stockholm", "Switzerland": "Bern", "Syria": "Damascus",
+        "Taiwan": "Taipei", "Tajikistan": "Dushanbe", "Tanzania": "Dodoma", "Thailand": "Bangkok", "Timor-Leste": "Dili", "Togo": "Lome", "Trinidad and Tobago": "Port of Spain", "Tunisia": "Tunis", "Turkey": "Ankara", "Turkmenistan": "Ashgabat",
+        "Uganda": "Kampala", "Ukraine": "Kyiv", "United Arab Emirates": "Abu Dhabi", "United Kingdom": "London", "United States of America": "Washington D.C.", "Uruguay": "Montevideo", "Uzbekistan": "Tashkent",
+        "Venezuela": "Caracas", "Vietnam": "Hanoi",
+        "W. Sahara": "Laayoune",
+        "Yemen": "Sanaa",
+        "Zambia": "Lusaka", "Zimbabwe": "Harare"
+    };
+
+    // --- GLOBAL STATE ---
+    const state = {
+        allData: [],
+        puzzleData: [],
+        gameMode: null,
+        score: 0,
+        startTime: 0,
+        timerInterval: null,
+        pool: [],
+        currentIdx: 0,
+        
+        // Map Game Specifics
+        roundAttempts: 0,
+        roundResolved: false,
+
+        // Map Viewport
+        viewBox: { x: 0, y: 0, w: 960, h: 500 }, // Standard D3 World Size
+        isPanning: false,
+        lastPan: { x: 0, y: 0 },
+
+        // Stats
+        testTotal: 0,
+        testCorrect: 0,
+        testMapCorrect: 0,
+        testCapCorrect: 0,
+
+        // Quiz specific
+        currentOptions: [],
+
+        // Puzzle Specific
+        draggedElement: null,
+        dragOffset: { x: 0, y: 0 },
+        puzzlePiecesLeft: 0,
+        puzzleTotalPiecesInPool: 0,
+
+        // Flash Card Specific
+        fcMode: 'capitals', 
+        fcStartSide: 'front', 
+        fcFlipped: false
+    };
+
+    const SVG_WIDTH = 960;
+    const SVG_HEIGHT = 500;
+
+    function showScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+    }
+
+    // --- INITIALIZATION ---
+    async function loadAllData() {
+        try {
+            // Load TopoJSON
+            const mapRes = await fetch('countries-110m.json');
+            if (!mapRes.ok) throw new Error("Could not load countries-110m.json");
+            const topoData = await mapRes.json();
+
+            // Load Puzzle Data
+            const puzRes = await fetch('world_puzzle_data.json'); // Changed name
+            if (puzRes.ok) state.puzzleData = await puzRes.json();
+
+            // Process TopoJSON -> SVG Paths
+            // We use D3 to convert the raw topojson into features, then project them
+            const countries = topojson.feature(topoData, topoData.objects.countries).features;
+            
+            // Define Projection (Equirectangular or Mercator)
+            // GeoNaturalEarth1 is nice but requires d3-geo-projection. Let's use standard GeoMercator or GeoEquirectangular
+            const projection = d3.geoEquirectangular()
+                .scale(150)
+                .translate([SVG_WIDTH / 2, SVG_HEIGHT / 2]);
+            
+            const pathGenerator = d3.geoPath().projection(projection);
+
+            // Convert to our internal format
+            state.allData = countries.map(feature => {
+                const name = feature.properties.name;
+                const path = pathGenerator(feature);
+                const capital = CAPITAL_DB[name] || "Unknown"; // Merge Capital Data
+                
+                // Filter out tiny islands or glitches without names
+                if (!name || !path) return null;
+
+                return { name, capital, path };
+            }).filter(item => item !== null && item.capital !== "Unknown"); // Only keep countries we have capitals for
+
+            renderMap();
+            
+            // Hide loading text
+            document.querySelector('#map-game-ui #feedback-bar').innerText = "FIND THE COUNTRY";
+            
+        } catch (e) {
+            console.error(e);
+            alert("Error: " + e.message + "\nMake sure countries-110m.json and world_puzzle_data.json are uploaded.");
+        }
+    }
+
+    function renderMap() {
+        const ns = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(ns, "svg");
+        svg.setAttribute("viewBox", `${state.viewBox.x} ${state.viewBox.y} ${state.viewBox.w} ${state.viewBox.h}`);
+        svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+        svg.setAttribute("id", "main-map-svg");
+
+        state.allData.forEach(s => {
+            const path = document.createElementNS(ns, "path");
+            path.setAttribute("d", s.path);
+            path.setAttribute("id", "map-" + s.name.replace(/\s/g, '')); 
+            path.setAttribute("data-name", s.name);
+            svg.appendChild(path);
+        });
+
+        const container = document.getElementById('map-container');
+        const controls = container.querySelector('#zoom-controls');
+        container.innerHTML = '';
+        if(controls) container.appendChild(controls);
+        container.appendChild(svg);
+
+        // Add Listeners
+        container.addEventListener('mousedown', startPan);
+        container.addEventListener('mousemove', doPan);
+        container.addEventListener('mouseup', endPan);
+        container.addEventListener('mouseleave', endPan);
+        container.addEventListener('touchstart', startPan, {passive: false});
+        container.addEventListener('touchmove', doPan, {passive: false});
+        container.addEventListener('touchend', endPan);
+    }
+
+    // --- ZOOM & PAN ---
+    function updateViewBox() {
+        const svg = document.getElementById('main-map-svg');
+        if(svg) svg.setAttribute("viewBox", `${state.viewBox.x} ${state.viewBox.y} ${state.viewBox.w} ${state.viewBox.h}`);
+    }
+    function zoomMap(factor) {
+        const cx = state.viewBox.x + state.viewBox.w / 2;
+        const cy = state.viewBox.y + state.viewBox.h / 2;
+        const newW = state.viewBox.w / factor;
+        const newH = state.viewBox.h / factor;
+        state.viewBox.x = cx - newW / 2;
+        state.viewBox.y = cy - newH / 2;
+        state.viewBox.w = newW;
+        state.viewBox.h = newH;
+        updateViewBox();
+    }
+    function resetZoom() {
+        state.viewBox = { x: 0, y: 0, w: SVG_WIDTH, h: SVG_HEIGHT };
+        updateViewBox();
+    }
+    
+    let isClick = true;
+    function startPan(e) {
+        if (e.target.closest('#zoom-controls')) return;
+        e.preventDefault();
+        state.isPanning = true; isClick = true;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        state.lastPan = { x: clientX, y: clientY };
+    }
+    function doPan(e) {
+        if (!state.isPanning) return;
+        e.preventDefault();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const dx = clientX - state.lastPan.x;
+        const dy = clientY - state.lastPan.y;
+        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) isClick = false;
+        
+        const container = document.getElementById('map-container');
+        const ratio = state.viewBox.w / container.clientWidth;
+        state.viewBox.x -= dx * ratio;
+        state.viewBox.y -= dy * ratio;
+        state.lastPan = { x: clientX, y: clientY };
+        updateViewBox();
+    }
+    function endPan(e) {
+        if (!state.isPanning) return;
+        state.isPanning = false;
+        
+        // Handle Clicks
+        if (isClick && (state.gameMode === 'map' || (state.gameMode === 'test' && state.pool[state.currentIdx].type === 'map'))) {
+            let target = e.target;
+            if (e.changedTouches && e.changedTouches.length > 0) {
+                 const t = e.changedTouches[0];
+                 target = document.elementFromPoint(t.clientX, t.clientY);
+            }
+            if (target && target.tagName === 'path' && target.hasAttribute('data-name')) {
+                const name = target.getAttribute('data-name');
+                const sObj = state.allData.find(s => s.name === name);
+                if(sObj) handleMapClick(sObj);
+            }
+        }
+    }
+
+    // --- GAME START ---
+    function startGame(mode) {
+        if (state.allData.length === 0) { alert("Loading..."); return; }
+
+        state.gameMode = mode;
+        state.score = 0;
+        state.testTotal = 0;
+        state.testCorrect = 0;
+        state.testMapCorrect = 0;
+        state.testCapCorrect = 0;
+        state.startTime = Date.now();
+        state.currentIdx = 0;
+        resetZoom();
+
+        // UI Reset
+        document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
+        document.getElementById('hud').style.display = 'flex';
+        // Hide sub-screens
+        document.getElementById('map-game-ui').style.display = 'none';
+        document.getElementById('capitals-game-ui').style.display = 'none';
+        document.getElementById('puzzle-game-ui').style.display = 'none';
+        document.getElementById('flashcards-ui').style.display = 'none';
+
+        // Pool Logic
+        if (mode === 'map' || mode === 'capitals') {
+            state.pool = [...state.allData].sort(() => 0.5 - Math.random()).slice(0, 10);
+        } else if (mode === 'puzzle') {
+            state.pool = [...state.puzzleData].sort(() => 0.5 - Math.random()).slice(0, 5);
+            state.puzzleTotalPiecesInPool = state.pool.reduce((acc, lvl) => acc + lvl.pieces.length, 0);
+        } else if (mode === 'flashcards') {
+            state.pool = [...state.allData].sort((a,b) => a.name.localeCompare(b.name));
+            document.getElementById('hud').style.display = 'none'; 
+        } else if (mode === 'test') {
+            let all = [...state.allData].sort(() => 0.5 - Math.random());
+            let q1 = all.slice(0, 25).map(s => ({ type: 'capital', data: s }));
+            let q2 = all.slice(25, 50).map(s => ({ type: 'map', data: s }));
+            state.pool = [...q1, ...q2].sort(() => 0.5 - Math.random());
+        }
+
+        document.getElementById('score-display').innerText = "SCORE: 0";
+        showScreen('game-screen');
+
+        if (state.timerInterval) clearInterval(state.timerInterval);
+        if (mode !== 'flashcards') state.timerInterval = setInterval(updateTimer, 1000);
+
+        // Sub-UI
+        if (mode === 'map') {
+            document.getElementById('map-game-ui').style.display = 'flex';
+            document.querySelector('#map-game-ui #feedback-bar').classList.add('visible');
+            loadMapRound();
+        } else if (mode === 'capitals') {
+            document.getElementById('capitals-game-ui').style.display = 'flex';
+            loadCapitalRound();
+        } else if (mode === 'puzzle') {
+            document.getElementById('puzzle-game-ui').style.display = 'flex';
+            document.querySelector('#puzzle-game-ui #feedback-bar').classList.add('visible');
+            loadPuzzleRound();
+        } else if (mode === 'flashcards') {
+            document.getElementById('flashcards-ui').style.display = 'flex';
+            loadFlashCard();
+        } else if (mode === 'test') {
+            loadTestRound();
+        }
+    }
+
+    function quitGame() {
+        if (state.timerInterval) clearInterval(state.timerInterval);
+        document.getElementById('report-modal').style.display = 'none';
+        document.getElementById('cert-modal').style.display = 'none';
+        showScreen('menu-screen');
+    }
+
+    function updateTimer() {
+        const delta = Math.floor((Date.now() - state.startTime) / 1000);
+        const m = Math.floor(delta / 60).toString().padStart(2, '0');
+        const s = (delta % 60).toString().padStart(2, '0');
+        document.getElementById('timer-display').innerText = `TIME: ${m}:${s}`;
+    }
+
+    // --- LOGIC BLOCKS (Map, Capital, Puzzle, Flash, Test) ---
+    // (Logic is same as v6.1 but adapted for variable SVG_WIDTH/HEIGHT)
+
+    function loadCapitalRound(overrideData) {
+        let targetState;
+        if (state.gameMode === 'test') targetState = overrideData;
+        else {
+            if (state.currentIdx >= state.pool.length) { showReport(); return; }
+            targetState = state.pool[state.currentIdx];
+        }
+
+        document.getElementById('capital-state-name').innerText = targetState.name.toUpperCase();
+        const feedback = document.querySelector('#capitals-game-ui #feedback-bar');
+        feedback.classList.remove('visible'); feedback.className = ''; 
+        
+        const previewContainer = document.getElementById('capital-state-preview');
+        previewContainer.innerHTML = ''; 
+        const ns = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(ns, "svg");
+        svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+        const path = document.createElementNS(ns, "path");
+        path.setAttribute("d", targetState.path);
+        svg.appendChild(path);
+        previewContainer.appendChild(svg);
+        setTimeout(() => { try { const bbox = path.getBBox(); const pad = 30; svg.setAttribute("viewBox", `${bbox.x - pad} ${bbox.y - pad} ${bbox.width + (pad*2)} ${bbox.height + (pad*2)}`); } catch(e) {} }, 10);
+        
+        const correctOption = { name: targetState.capital, isCorrect: true };
+        const distractorsPool = state.allData.filter(s => s.name !== targetState.name);
+        const shuffledDistractors = distractorsPool.sort(() => 0.5 - Math.random()).slice(0, 3);
+        const options = shuffledDistractors.map(s => ({ name: s.capital, isCorrect: false }));
+        options.push(correctOption);
+        state.currentOptions = options.sort(() => 0.5 - Math.random());
+        for(let i=0; i<4; i++) { const btn = document.getElementById(`opt-${i}`); btn.innerText = state.currentOptions[i].name.toUpperCase(); btn.classList.remove('correct-anim', 'wrong-anim'); btn.disabled = false; }
+    }
+
+    function checkCapital(idx) {
+        const selected = state.currentOptions[idx];
+        const btn = document.getElementById(`opt-${idx}`);
+        const feedback = document.querySelector('#capitals-game-ui #feedback-bar');
+        feedback.classList.add('visible');
+        for(let i=0; i<4; i++) document.getElementById(`opt-${i}`).disabled = true;
+        
+        if (state.gameMode !== 'test') state.testTotal++;
+
+        if (selected.isCorrect) {
+            if (state.gameMode === 'test') { state.testCapCorrect++; state.testCorrect++; } else { state.testCorrect++; state.score += 10; }
+            document.getElementById('score-display').innerText = "SCORE: " + state.score;
+            btn.classList.add('correct-anim'); feedback.className = 'correct visible'; feedback.innerText = "CORRECT!"; 
+            setTimeout(nextCapitalRound, 1000);
+        } else {
+            btn.classList.add('wrong-anim'); feedback.className = 'wrong visible';
+            const correctCap = state.currentOptions.find(o => o.isCorrect).name.toUpperCase();
+            feedback.innerText = `WRONG. IT IS ${correctCap}`;
+            state.currentOptions.forEach((opt, i) => { if(opt.isCorrect) document.getElementById(`opt-${i}`).classList.add('correct-anim'); });
+            setTimeout(nextCapitalRound, 2000); 
+        }
+    }
+    
+    function nextCapitalRound() { 
+        state.currentIdx++; 
+        if (state.gameMode === 'test') loadTestRound();
+        else loadCapitalRound(); 
+    }
+
+    function loadMapRound(overrideData) {
+        state.roundAttempts = 0; state.roundResolved = false;
+        document.querySelectorAll('path').forEach(p => { p.classList.remove('highlighted', 'wrong', 'correct'); });
+        
+        let target;
+        if (state.gameMode === 'test') target = overrideData;
+        else {
+            if (state.currentIdx >= state.pool.length) { showReport(); return; }
+            target = state.pool[state.currentIdx];
+        }
+        
+        const feedback = document.querySelector('#map-game-ui #feedback-bar');
+        feedback.className = 'visible'; feedback.innerText = `FIND: ${target.name.toUpperCase()}`;
+    }
+
+    function handleMapClick(clickedState) {
+        if (state.roundResolved) return;
+        
+        let correct;
+        if (state.gameMode === 'test') correct = state.pool[state.currentIdx].data;
+        else {
+            if (state.currentIdx >= state.pool.length) return;
+            correct = state.pool[state.currentIdx];
+        }
+
+        const feedback = document.querySelector('#map-game-ui #feedback-bar');
+        const clickedEl = document.getElementById("map-" + clickedState.name.replace(/\s/g, ''));
+        
+        if (state.gameMode !== 'test' && state.roundAttempts === 0) state.testTotal++;
+
+        if (clickedState.name === correct.name) {
+            state.roundResolved = true; clickedEl.classList.add('correct'); feedback.className = 'correct visible';
+            
+            if (state.gameMode === 'test') { state.testMapCorrect++; state.testCorrect++; feedback.innerText = "CORRECT!"; setTimeout(nextMapRound, 1000); } 
+            else {
+                if (state.roundAttempts === 0) { state.testCorrect++; state.score += 15; feedback.innerText = "EXCELLENT!"; } 
+                else { state.score += 5; feedback.innerText = "CORRECT!"; }
+                document.getElementById('score-display').innerText = "SCORE: " + state.score; setTimeout(nextMapRound, 1000);
+            }
+        } else {
+            clickedEl.classList.add('wrong');
+            if (state.gameMode === 'test') {
+                state.roundResolved = true; feedback.className = 'wrong visible'; feedback.innerText = `WRONG. THAT WAS ${clickedState.name.toUpperCase()}.`;
+                const correctID = "map-" + correct.name.replace(/\s/g, '');
+                const correctEl = document.getElementById(correctID);
+                if (correctEl) correctEl.classList.add('highlighted');
+                setTimeout(nextMapRound, 2000);
+            } else {
+                const win = document.getElementById('game-screen'); win.classList.remove('shake-effect'); void win.offsetWidth; win.classList.add('shake-effect');
+                if (state.roundAttempts === 0) { state.roundAttempts++; feedback.classList.add('wrong', 'visible'); feedback.innerText = `THAT IS ${clickedState.name.toUpperCase()}. TRY AGAIN.`; } 
+                else {
+                    state.roundResolved = true;
+                    const correctID = "map-" + correct.name.replace(/\s/g, '');
+                    const correctEl = document.getElementById(correctID);
+                    if (correctEl) correctEl.classList.add('highlighted');
+                    feedback.classList.add('wrong', 'visible'); feedback.innerText = `WRONG. THAT WAS ${correct.name.toUpperCase()}.`;
+                    setTimeout(nextMapRound, 2500);
+                }
+            }
+        }
+    }
+
+    function nextMapRound() { 
+        state.currentIdx++; 
+        if (state.gameMode === 'test') loadTestRound();
+        else loadMapRound(); 
+    }
+
+    function loadTestRound() {
+        if (state.currentIdx >= state.pool.length) { showCertificate(); return; }
+        const q = state.pool[state.currentIdx];
+        document.getElementById('map-game-ui').style.display = 'none';
+        document.getElementById('capitals-game-ui').style.display = 'none';
+        if (q.type === 'map') {
+            document.getElementById('map-game-ui').style.display = 'flex';
+            document.querySelector('#map-game-ui #feedback-bar').classList.add('visible');
+            loadMapRound(q.data); 
+        } else {
+            document.getElementById('capitals-game-ui').style.display = 'flex';
+            loadCapitalRound(q.data); 
+        }
+    }
+
+    function showCertificate() {
+        document.getElementById('cert-caps').innerText = `${state.testCapCorrect}/25`;
+        document.getElementById('cert-maps').innerText = `${state.testMapCorrect}/25`;
+        document.getElementById('cert-total').innerText = `${state.testCorrect}/50`;
+        document.getElementById('cert-modal').style.display = 'flex';
+    }
+    
+    function closeCert() { document.getElementById('cert-modal').style.display = 'none'; quitGame(); }
+
+    function toggleFlashMode() {
+        state.fcMode = state.fcMode === 'capitals' ? 'shapes' : 'capitals';
+        document.getElementById('fc-mode-display').innerText = state.fcMode.toUpperCase();
+        loadFlashCard();
+    }
+    function toggleFlashSide() {
+        state.fcStartSide = state.fcStartSide === 'front' ? 'back' : 'front';
+        document.getElementById('fc-side-display').innerText = state.fcStartSide.toUpperCase();
+        loadFlashCard();
+    }
+    function loadFlashCard() {
+        state.fcFlipped = false;
+        renderCardContent();
+        document.getElementById('fc-count').innerText = `${state.currentIdx + 1} / ${state.pool.length}`;
+    }
+    function flipCard() { state.fcFlipped = !state.fcFlipped; renderCardContent(); }
+    function renderCardContent() {
+        const item = state.pool[state.currentIdx];
+        const content = document.getElementById('card-content');
+        content.innerHTML = '';
+        let showFront = !state.fcFlipped;
+        if (state.fcStartSide === 'back') showFront = !showFront;
+
+        if (state.fcMode === 'capitals') {
+            if (showFront) content.innerHTML = `<div class="card-content-text">${item.name.toUpperCase()}</div><div class="card-content-sub">COUNTRY</div>`;
+            else content.innerHTML = `<div class="card-content-text">${item.capital.toUpperCase()}</div><div class="card-content-sub">CAPITAL</div>`;
+        } else {
+            if (showFront) {
+                const ns = "http://www.w3.org/2000/svg";
+                const svg = document.createElementNS(ns, "svg");
+                svg.setAttribute("viewBox", "0 0 960 500"); // Standard Size
+                const path = document.createElementNS(ns, "path");
+                path.setAttribute("d", item.path);
+                path.setAttribute("fill", "#444"); path.setAttribute("stroke", "none");
+                svg.appendChild(path); content.appendChild(svg);
+                setTimeout(() => { try { const bbox = path.getBBox(); const pad = 20; svg.setAttribute("viewBox", `${bbox.x - pad} ${bbox.y - pad} ${bbox.width + (pad*2)} ${bbox.height + (pad*2)}`); } catch(e){} }, 0);
+            } else { content.innerHTML = `<div class="card-content-text">${item.name.toUpperCase()}</div>`; }
+        }
+    }
+    function nextCard() { state.currentIdx++; if (state.currentIdx >= state.pool.length) state.currentIdx = 0; loadFlashCard(); }
+    function prevCard() { state.currentIdx--; if (state.currentIdx < 0) state.currentIdx = state.pool.length - 1; loadFlashCard(); }
+
+    // --- PUZZLE LOGIC (Updated for World) ---
+    function loadPuzzleRound() {
+        if (state.currentIdx >= state.pool.length) { showReport(); return; }
+        const levelData = state.pool[state.currentIdx];
+        document.getElementById('puzzle-region-name').innerText = `REGION: ${levelData.name.toUpperCase()}`;
+        const feedback = document.querySelector('#puzzle-game-ui #feedback-bar');
+        feedback.innerText = "DRAG THE PIECES TO THE DOTTED LINES"; feedback.className = 'visible';
+        
+        const container = document.getElementById('puzzle-area'); container.innerHTML = '';
+        const ns = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(ns, "svg");
+        svg.setAttribute("width", "100%"); svg.setAttribute("height", "100%");
+        
+        const baseState = state.allData.find(s => s.name === levelData.base);
+        // Note: World countries names must match EXACTLY what's in TopoJSON
+        const piecesStates = levelData.pieces.map(pName => state.allData.find(s => s.name === pName));
+        
+        if (!baseState || piecesStates.some(p => !p)) { console.log("Skipping level, missing data for: " + levelData.name); nextPuzzleRound(); return; }
+
+        state.puzzlePiecesLeft = piecesStates.length;
+
+        const basePath = document.createElementNS(ns, "path");
+        basePath.setAttribute("d", baseState.path); basePath.setAttribute("class", "puzzle-base");
+        svg.appendChild(basePath);
+        setTimeout(() => addLabelToPuzzlePiece(basePath, baseState.name, svg), 100);
+
+        piecesStates.forEach(p => {
+            const targetPath = document.createElementNS(ns, "path");
+            targetPath.setAttribute("d", p.path); targetPath.setAttribute("class", "puzzle-target");
+            svg.appendChild(targetPath);
+        });
+        piecesStates.forEach((p) => {
+            const piece = document.createElementNS(ns, "path");
+            piece.setAttribute("d", p.path); piece.setAttribute("class", "puzzle-piece");
+            piece.setAttribute("data-id", p.name); 
+            const offsetX = (Math.random() * 100) - 50; const offsetY = (Math.random() * 100) - 50;
+            piece.dataset.tx = offsetX; piece.dataset.ty = offsetY;
+            piece.setAttribute("transform", `translate(${offsetX}, ${offsetY})`);
+            piece.addEventListener('mousedown', startDrag); piece.addEventListener('touchstart', startDrag, {passive: false});
+            svg.appendChild(piece);
+        });
+        container.appendChild(svg);
+
+        setTimeout(() => {
+            try {
+                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                svg.querySelectorAll('path').forEach(p => {
+                    const bbox = p.getBBox();
+                    if (bbox.x < minX) minX = bbox.x; if (bbox.y < minY) minY = bbox.y;
+                    if (bbox.x + bbox.width > maxX) maxX = bbox.x + bbox.width; if (bbox.y + bbox.height > maxY) maxY = bbox.y + bbox.height;
+                });
+                const pad = 40; const width = maxX - minX + (pad * 2); const height = maxY - minY + (pad * 2);
+                svg.setAttribute("viewBox", `${minX - pad} ${minY - pad} ${width} ${height}`);
+            } catch (e) { svg.setAttribute("viewBox", `0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`); }
+        }, 50);
+
+        svg.addEventListener('mousemove', drag); svg.addEventListener('touchmove', drag, {passive: false});
+        svg.addEventListener('mouseup', endDrag); svg.addEventListener('touchend', endDrag); svg.addEventListener('mouseleave', endDrag);
+    }
+    
+    function addLabelToPuzzlePiece(pathElement, text, svgContainer) {
+        try {
+            const bbox = pathElement.getBBox();
+            const cx = bbox.x + bbox.width / 2; const cy = bbox.y + bbox.height / 2;
+            const ns = "http://www.w3.org/2000/svg";
+            const textEl = document.createElementNS(ns, "text");
+            textEl.setAttribute("x", cx); textEl.setAttribute("y", cy);
+            textEl.setAttribute("class", "puzzle-label"); textEl.textContent = text.toUpperCase();
+            if (bbox.width < 20 || bbox.height < 20) textEl.setAttribute("font-size", "8px"); 
+            svgContainer.appendChild(textEl);
+        } catch(e) {}
+    }
+    function startDrag(e) {
+        e.preventDefault();
+        const svg = document.querySelector('#puzzle-area svg'); const piece = e.target;
+        if (piece.classList.contains('snapped')) return;
+        state.draggedElement = piece; piece.classList.add('dragging');
+        document.querySelector('#puzzle-game-ui #feedback-bar').innerText = "MOVING: " + piece.dataset.id.toUpperCase();
+        svg.appendChild(piece);
+        const pt = getEventPoint(e, svg);
+        state.dragOffset.x = pt.x - parseFloat(piece.dataset.tx); state.dragOffset.y = pt.y - parseFloat(piece.dataset.ty);
+    }
+    function drag(e) {
+        if (!state.draggedElement) return;
+        e.preventDefault();
+        const svg = document.querySelector('#puzzle-area svg'); const pt = getEventPoint(e, svg);
+        const newX = pt.x - state.dragOffset.x; const newY = pt.y - state.dragOffset.y;
+        state.draggedElement.dataset.tx = newX; state.draggedElement.dataset.ty = newY;
+        state.draggedElement.setAttribute("transform", `translate(${newX}, ${newY})`);
+    }
+    function endDrag(e) {
+        if (!state.draggedElement) return;
+        const piece = state.draggedElement; const name = piece.dataset.id; const svg = document.querySelector('#puzzle-area svg');
+        piece.classList.remove('dragging'); state.draggedElement = null;
+        const tx = parseFloat(piece.dataset.tx); const ty = parseFloat(piece.dataset.ty); const dist = Math.sqrt(tx*tx + ty*ty);
+        if (dist < 20) {
+            piece.setAttribute("transform", "translate(0, 0)"); piece.classList.add('snapped');
+            addLabelToPuzzlePiece(piece, name, svg);
+            const feedback = document.querySelector('#puzzle-game-ui #feedback-bar');
+            feedback.innerText = "PLACED: " + name.toUpperCase(); feedback.className = 'correct visible';
+            state.puzzlePiecesLeft--; state.score += 20; state.testCorrect++; 
+            document.getElementById('score-display').innerText = "SCORE: " + state.score;
+            if (state.puzzlePiecesLeft <= 0) { feedback.innerText = "REGION COMPLETE!"; setTimeout(nextPuzzleRound, 1500); }
+            else { setTimeout(() => { if (state.puzzlePiecesLeft > 0) { feedback.innerText = "NEXT PIECE..."; feedback.className = 'visible'; } }, 1000); }
+        } else {
+            const feedback = document.querySelector('#puzzle-game-ui #feedback-bar');
+            feedback.innerText = "NOT QUITE..."; feedback.className = 'wrong visible';
+        }
+    }
+    function getEventPoint(e, svg) {
+        let p = svg.createSVGPoint();
+        if (e.touches && e.touches.length > 0) { p.x = e.touches[0].clientX; p.y = e.touches[0].clientY; } else { p.x = e.clientX; p.y = e.clientY; }
+        return p.matrixTransform(svg.getScreenCTM().inverse());
+    }
+    function nextPuzzleRound() { state.currentIdx++; loadPuzzleRound(); }
+
+    function showReport() {
+        let total = state.testTotal;
+        if (state.gameMode === 'puzzle') total = state.puzzleTotalPiecesInPool;
+        const pct = total === 0 ? 0 : Math.round((state.testCorrect / total) * 100);
+        document.getElementById('report-percent').innerText = pct + "%";
+        document.getElementById('report-fraction').innerText = `${state.testCorrect} / ${total} Correct`;
+        document.getElementById('report-modal').style.display = 'flex';
+    }
+
+    function closeReport() { document.getElementById('report-modal').style.display = 'none'; quitGame(); }
+
+    // Start
+    loadAllData(); 
+
+</script>
+</body>
+</html>
