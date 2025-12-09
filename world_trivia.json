@@ -1,0 +1,182 @@
+[
+    {
+        "state": "Australia",
+        "question": "Which animal is found on the coat of arms of Australia alongside the kangaroo?",
+        "options": ["Emu", "Koala", "Platypus", "Dingo"],
+        "answer": "Emu"
+    },
+    {
+        "state": "Brazil",
+        "question": "Brazil is the world's largest producer of which crop?",
+        "options": ["Coffee", "Rice", "Wheat", "Tea"],
+        "answer": "Coffee"
+    },
+    {
+        "state": "Canada",
+        "question": "Canada has the longest one of these in the world:",
+        "options": ["Coastline", "Mountain Range", "River", "Tunnel"],
+        "answer": "Coastline"
+    },
+    {
+        "state": "China",
+        "question": "Which man-made structure in China is visible from low earth orbit?",
+        "options": ["The Great Wall", "The Forbidden City", "Three Gorges Dam", "Terracotta Army"],
+        "answer": "The Great Wall"
+    },
+    {
+        "state": "Egypt",
+        "question": "The Great Pyramid of Giza was built for which Pharaoh?",
+        "options": ["Khufu", "Tutankhamun", "Ramses II", "Cleopatra"],
+        "answer": "Khufu"
+    },
+    {
+        "state": "France",
+        "question": "Which famous iron tower was built for the 1889 World's Fair in Paris?",
+        "options": ["Eiffel Tower", "Tower of Pisa", "Tokyo Tower", "Blackpool Tower"],
+        "answer": "Eiffel Tower"
+    },
+    {
+        "state": "Germany",
+        "question": "Oktoberfest, the world's largest beer festival, is held in which city?",
+        "options": ["Munich", "Berlin", "Hamburg", "Frankfurt"],
+        "answer": "Munich"
+    },
+    {
+        "state": "India",
+        "question": "Which white marble mausoleum was built by Shah Jahan in memory of his wife?",
+        "options": ["Taj Mahal", "Red Fort", "Qutub Minar", "Hawa Mahal"],
+        "answer": "Taj Mahal"
+    },
+    {
+        "state": "Italy",
+        "question": "Which city is known as the 'Floating City'?",
+        "options": ["Venice", "Rome", "Naples", "Milan"],
+        "answer": "Venice"
+    },
+    {
+        "state": "Japan",
+        "question": "Mount Fuji is which type of geological feature?",
+        "options": ["Active Volcano", "Granite Dome", "Fold Mountain", "Plateau"],
+        "answer": "Active Volcano"
+    },
+    {
+        "state": "Mexico",
+        "question": "Which ancient civilization built the pyramid of Chichen Itza?",
+        "options": ["Mayans", "Aztecs", "Incas", "Olmecs"],
+        "answer": "Mayans"
+    },
+    {
+        "state": "Russia",
+        "question": "What is the name of the deepest lake in the world, located in Siberia?",
+        "options": ["Lake Baikal", "Lake Superior", "Caspian Sea", "Lake Victoria"],
+        "answer": "Lake Baikal"
+    },
+    {
+        "state": "South Africa",
+        "question": "Table Mountain overlooks which South African city?",
+        "options": ["Cape Town", "Johannesburg", "Durban", "Pretoria"],
+        "answer": "Cape Town"
+    },
+    {
+        "state": "Spain",
+        "question": "Which unfinished basilica in Barcelona was designed by Antoni Gaudi?",
+        "options": ["Sagrada Familia", "Alhambra", "Casa Mila", "Park Guell"],
+        "answer": "Sagrada Familia"
+    },
+    {
+        "state": "United Kingdom",
+        "question": "What is the name of the residence of the British Monarch in London?",
+        "options": ["Buckingham Palace", "Windsor Castle", "Kensington Palace", "Tower of London"],
+        "answer": "Buckingham Palace"
+    },
+    {
+        "state": "United States",
+        "question": "Which canyon in Arizona is considered one of the Seven Natural Wonders?",
+        "options": ["Grand Canyon", "Antelope Canyon", "Bryce Canyon", "Zion Canyon"],
+        "answer": "Grand Canyon"
+    },
+    {
+        "state": "Argentina",
+        "question": "Argentina is famous for which style of dance?",
+        "options": ["Tango", "Salsa", "Flamenco", "Samba"],
+        "answer": "Tango"
+    },
+    {
+        "state": "Greece",
+        "question": "The Parthenon sits atop which ancient citadel in Athens?",
+        "options": ["The Acropolis", "Mount Olympus", "Delphi", "The Agora"],
+        "answer": "The Acropolis"
+    },
+    {
+        "state": "Iceland",
+        "question": "Iceland is known as the Land of Fire and what?",
+        "options": ["Ice", "Snow", "Water", "Wind"],
+        "answer": "Ice"
+    },
+    {
+        "state": "Kenya",
+        "question": "Kenya is famous for the Great Migration of which animal?",
+        "options": ["Wildebeest", "Elephant", "Lion", "Giraffe"],
+        "answer": "Wildebeest"
+    },
+    {
+        "state": "Madagascar",
+        "question": "Which primate is endemic to the island of Madagascar?",
+        "options": ["Lemur", "Monkey", "Orangutan", "Chimpanzee"],
+        "answer": "Lemur"
+    },
+    {
+        "state": "Netherlands",
+        "question": "The Netherlands is famous for fields of which flower?",
+        "options": ["Tulips", "Roses", "Sunflowers", "Lilies"],
+        "answer": "Tulips"
+    },
+    {
+        "state": "New Zealand",
+        "question": "Which flightless bird is the national symbol of New Zealand?",
+        "options": ["Kiwi", "Emu", "Ostrich", "Penguin"],
+        "answer": "Kiwi"
+    },
+    {
+        "state": "Norway",
+        "question": "Norway is famous for its deep coastal inlets called what?",
+        "options": ["Fjords", "Sounds", "Bays", "Estuaries"],
+        "answer": "Fjords"
+    },
+    {
+        "state": "Peru",
+        "question": "Which ancient Incan city is located high in the Andes mountains?",
+        "options": ["Machu Picchu", "Cusco", "Lima", "Nazca"],
+        "answer": "Machu Picchu"
+    },
+    {
+        "state": "Saudi Arabia",
+        "question": "Mecca, the holiest city in Islam, is located in which country?",
+        "options": ["Saudi Arabia", "Iran", "Iraq", "Egypt"],
+        "answer": "Saudi Arabia"
+    },
+    {
+        "state": "Switzerland",
+        "question": "Switzerland is famous for its neutrality and the production of:",
+        "options": ["Watches", "Cars", "Computers", "Ships"],
+        "answer": "Watches"
+    },
+    {
+        "state": "Thailand",
+        "question": "Thailand was historically known as:",
+        "options": ["Siam", "Burma", "Ceylon", "Persia"],
+        "answer": "Siam"
+    },
+    {
+        "state": "Turkey",
+        "question": "Which city in Turkey straddles both Europe and Asia?",
+        "options": ["Istanbul", "Ankara", "Izmir", "Antalya"],
+        "answer": "Istanbul"
+    },
+    {
+        "state": "Vietnam",
+        "question": "Ha Long Bay, famous for its limestone islands, is in which country?",
+        "options": ["Vietnam", "Thailand", "Cambodia", "Laos"],
+        "answer": "Vietnam"
+    }
+]
