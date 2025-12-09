@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MacAtlas World v2.3</title>
+    <title>MacAtlas World v2.4</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -173,8 +173,10 @@
             background: #fff; border: 2px solid #000; cursor: pointer;
             font-family: 'VT323', monospace;
             box-shadow: 2px 2px 0 rgba(0,0,0,0.5);
-            display: none; /* Hidden by default, shown in Region Quiz */
+            display: none; 
         }
+        
+        #region-switch-btn:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 rgba(0,0,0,0.5); }
 
         svg { width: 100%; height: 100%; display: block; }
 
@@ -322,7 +324,7 @@
     <div id="main-window">
         <div id="title-bar">
             <div id="close-btn" onclick="quitGame()"></div>
-            <div id="title-text">MacAtlas World v2.3</div>
+            <div id="title-text">MacAtlas World v2.4</div>
         </div>
 
         <div id="content">
@@ -704,44 +706,59 @@
         state.pool = regionCountries.map(pName => state.allData.find(s => s.name === pName)).filter(s => s);
         state.currentIdx = 0; // reset index for new region
         
+        // --- FIX: Force Zoom immediately after setting pool ---
+        // Need a slight delay to ensure pool is ready? No, synchronous is fine here.
+        // But the map UI isn't visible yet in the very first call from startGame
+        // The isolate logic handles zoom calculation.
         isolateRegionOnMap(state.pool);
     }
 
     function isolateRegionOnMap(countries) {
-        const allPaths = document.querySelectorAll('#map-container path');
-        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        let found = false;
+        // Must wait for map to be rendered? It is rendered on load.
+        // But display:none might affect getBBox in some browsers?
+        // Let's ensure the map is visible before measuring.
+        // In startGame, we show screen before calling this.
+        
+        // Actually, in startGame: initRegionQuiz is called BEFORE showing map UI.
+        // Let's move the zoom logic to be triggered slightly later or safely.
+        
+        // We will defer the actual zoom calculation to next tick to ensure DOM is ready
+        setTimeout(() => {
+            const allPaths = document.querySelectorAll('#map-container path');
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            let found = false;
 
-        allPaths.forEach(p => {
-            const name = p.getAttribute('data-name');
-            const isInRegion = countries.some(c => c.name === name);
-            if (!isInRegion) p.classList.add('faded');
-            else {
-                p.classList.remove('faded');
-                // Calculate bounds for zoom
-                try {
-                    const bbox = p.getBBox();
-                    if (bbox.x < minX) minX = bbox.x;
-                    if (bbox.y < minY) minY = bbox.y;
-                    if (bbox.x + bbox.width > maxX) maxX = bbox.x + bbox.width;
-                    if (bbox.y + bbox.height > maxY) maxY = bbox.y + bbox.height;
-                    found = true;
-                } catch(e){}
+            allPaths.forEach(p => {
+                const name = p.getAttribute('data-name');
+                const isInRegion = countries.some(c => c.name === name);
+                if (!isInRegion) p.classList.add('faded');
+                else {
+                    p.classList.remove('faded');
+                    // Calculate bounds for zoom
+                    try {
+                        const bbox = p.getBBox();
+                        if (bbox.x < minX) minX = bbox.x;
+                        if (bbox.y < minY) minY = bbox.y;
+                        if (bbox.x + bbox.width > maxX) maxX = bbox.x + bbox.width;
+                        if (bbox.y + bbox.height > maxY) maxY = bbox.y + bbox.height;
+                        found = true;
+                    } catch(e){}
+                }
+            });
+
+            if (found) {
+                // Add padding to calculation
+                const pad = 30;
+                const w = maxX - minX + (pad*2);
+                const h = maxY - minY + (pad*2);
+                // Apply zoom
+                state.viewBox = { x: minX - pad, y: minY - pad, w: w, h: h };
+                updateViewBox();
+            } else {
+                // Fallback if bounds calc fails
+                resetZoom();
             }
-        });
-
-        if (found) {
-            // Add padding to calculation
-            const pad = 30;
-            const w = maxX - minX + (pad*2);
-            const h = maxY - minY + (pad*2);
-            // Apply zoom
-            state.viewBox = { x: minX - pad, y: minY - pad, w: w, h: h };
-            updateViewBox();
-        } else {
-            // Fallback if bounds calc fails
-            resetZoom();
-        }
+        }, 50); // 50ms delay to allow DOM paint
     }
 
     // --- PRACTICE MODE ---
