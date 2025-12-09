@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MacAtlas World v2.0</title>
+    <title>MacAtlas World v2.1</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -154,7 +154,7 @@
         #zoom-controls {
             position: absolute;
             bottom: 10px; right: 10px;
-            display: flex; flexDirection: column; gap: 5px; z-index: 100;
+            display: flex; flex-direction: column; gap: 5px; z-index: 100;
         }
 
         .zoom-btn {
@@ -287,6 +287,16 @@
             10% { transform: translate(-1px, -2px) rotate(-1deg); }
             100% { transform: translate(1px, -2px) rotate(-1deg); }
         }
+        
+        #error-display {
+            color: red;
+            background: #ffe6e6;
+            border: 1px solid red;
+            padding: 10px;
+            margin-top: 20px;
+            display: none;
+            font-family: monospace;
+        }
     </style>
 </head>
 <body>
@@ -294,7 +304,7 @@
     <div id="main-window">
         <div id="title-bar">
             <div id="close-btn" onclick="quitGame()"></div>
-            <div id="title-text">MacAtlas World v2.0</div>
+            <div id="title-text">MacAtlas World v2.1</div>
         </div>
 
         <div id="content">
@@ -314,6 +324,7 @@
                     <button class="btn" onclick="startGame('practice')">PRACTICE MODE</button>
                     <button class="btn" onclick="startGame('test')">FULL TEST (50)</button>
                 </div>
+                <div id="error-display"></div>
             </div>
 
             <!-- GAME SCREEN -->
@@ -454,22 +465,36 @@
         document.getElementById(screenId).classList.add('active');
     }
 
+    // --- INITIALIZATION (ROBUST LOADING) ---
     async function loadAllData() {
-        try {
-            const mapRes = await fetch('world110.json');
-            if (!mapRes.ok) throw new Error("Could not load world110.json");
-            state.allData = await mapRes.json();
+        const errorEl = document.getElementById('error-display');
+        let errorMsg = "";
 
-            const trivRes = await fetch('world_trivia.json');
-            if (trivRes.ok) state.triviaData = await trivRes.json();
+        const safeFetch = async (file) => {
+            try {
+                // Use strict relative path
+                const res = await fetch(file);
+                if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+                return await res.json();
+            } catch (e) {
+                console.error(`Failed to load ${file}:`, e);
+                errorMsg += `MISSING: ${file} `;
+                return [];
+            }
+        };
 
-            const puzRes = await fetch('world_puzzle.json');
-            if (puzRes.ok) state.puzzleData = await puzRes.json();
+        // Load Files
+        state.allData = await safeFetch('world110.json');
+        state.triviaData = await safeFetch('world_trivia.json');
+        state.puzzleData = await safeFetch('world_puzzle.json');
 
+        if (errorMsg) {
+            errorEl.style.display = 'block';
+            errorEl.innerText = "ERROR LOADING DATA: " + errorMsg + ". Check your file names and folder structure.";
+        }
+
+        if (state.allData.length > 0) {
             renderMap();
-        } catch (e) {
-            console.error(e);
-            alert("Error loading data. Ensure json files are present.");
         }
     }
 
@@ -563,7 +588,18 @@
 
     // GAME LOOP
     function startGame(mode) {
-        if (state.allData.length === 0) { alert("Loading..."); return; }
+        // SAFETY CHECK
+        if (state.allData.length === 0) { 
+            alert("Data not loaded. Please check the files."); 
+            return; 
+        }
+        if ((mode === 'trivia' && state.triviaData.length === 0) || 
+            (mode === 'puzzle' && state.puzzleData.length === 0) ||
+            (mode === 'region_quiz' && state.puzzleData.length === 0)) {
+            alert("This specific game mode data failed to load."); 
+            return;
+        }
+
         state.gameMode = mode; state.score = 0; state.testTotal = 0; state.testCorrect = 0;
         state.testMapCorrect = 0; state.testCapCorrect = 0; state.startTime = Date.now(); state.currentIdx = 0;
         resetZoom();
@@ -584,12 +620,10 @@
             let all = [...state.allData].sort(() => 0.5 - Math.random());
             state.pool = [...all.slice(0,25).map(s=>({type:'capital',data:s})), ...all.slice(25,50).map(s=>({type:'map',data:s}))].sort(() => 0.5 - Math.random());
         } else if (mode === 'region_quiz') {
-            // Pick a random region from puzzle data, then find countries in it
+            // Pick a random region from puzzle data
             const region = state.puzzleData[Math.floor(Math.random() * state.puzzleData.length)];
             state.regionQuizName = region.name;
-            // Get country objects for this region
             state.pool = region.pieces.map(pName => state.allData.find(s => s.name === pName)).filter(s => s);
-            // Zoom to region? We can try auto-zoom logic later, for now let user find it.
         } else if (mode === 'practice') {
             state.pool = [];
         }
@@ -645,7 +679,10 @@
         document.getElementById('prac-capital').innerText = country.capital.toUpperCase();
         
         // Find trivia
-        const t = state.triviaData.find(t => t.state === country.name);
+        let t = null;
+        if(state.triviaData && state.triviaData.length > 0) {
+            t = state.triviaData.find(t => t.state === country.name);
+        }
         document.getElementById('prac-trivia').innerText = t ? t.question + " Answer: " + t.answer : "Did you know? " + country.name + " is amazing!";
         
         document.getElementById('practice-modal').style.display = 'flex';
@@ -672,10 +709,7 @@
             feedback.innerText = `FIND: ${target.name.toUpperCase()}`;
         }
         
-        // Auto-zoom for region quiz?
         if (state.gameMode === 'region_quiz' && state.currentIdx === 0) {
-            // Try to frame the first country roughly? Or just let them pan.
-            // Let's reset zoom to give them context first.
             if(state.currentIdx === 0) resetZoom(); 
         }
     }
@@ -783,7 +817,7 @@
         svg.addEventListener('mousemove', drag); svg.addEventListener('touchmove', drag, {passive: false});
         svg.addEventListener('mouseup', endDrag); svg.addEventListener('touchend', endDrag); svg.addEventListener('mouseleave', endDrag);
     }
-    // Puzzle Helpers (Drag etc)
+    // Puzzle Helpers
     function addLabelToPuzzlePiece(pathElement, text, svgContainer) {
         try {
             const bbox = pathElement.getBBox();
@@ -800,6 +834,7 @@
         const svg = document.querySelector('#puzzle-area svg'); const piece = e.target;
         if (piece.classList.contains('snapped')) return;
         state.draggedElement = piece; piece.classList.add('dragging');
+        document.querySelector('#puzzle-game-ui #feedback-bar').innerText = "MOVING: " + piece.dataset.id.toUpperCase();
         svg.appendChild(piece);
         const pt = getEventPoint(e, svg);
         state.dragOffset.x = pt.x - parseFloat(piece.dataset.tx); state.dragOffset.y = pt.y - parseFloat(piece.dataset.ty);
@@ -820,9 +855,15 @@
         if (dist < 20) {
             piece.setAttribute("transform", "translate(0, 0)"); piece.classList.add('snapped');
             addLabelToPuzzlePiece(piece, name, svg);
+            const feedback = document.querySelector('#puzzle-game-ui #feedback-bar');
+            feedback.innerText = "PLACED: " + name.toUpperCase(); feedback.className = 'correct visible';
             state.puzzlePiecesLeft--; state.score += 20; state.testCorrect++; 
             document.getElementById('score-display').innerText = "SCORE: " + state.score;
-            if (state.puzzlePiecesLeft <= 0) setTimeout(nextPuzzleRound, 1500);
+            if (state.puzzlePiecesLeft <= 0) { feedback.innerText = "REGION COMPLETE!"; setTimeout(nextPuzzleRound, 1500); }
+            else { setTimeout(() => { if (state.puzzlePiecesLeft > 0) { feedback.innerText = "NEXT PIECE..."; feedback.className = 'visible'; } }, 1000); }
+        } else {
+            const feedback = document.querySelector('#puzzle-game-ui #feedback-bar');
+            feedback.innerText = "NOT QUITE..."; feedback.className = 'wrong visible';
         }
     }
     function getEventPoint(e, svg) {
@@ -832,7 +873,7 @@
     }
     function nextPuzzleRound() { state.currentIdx++; loadPuzzleRound(); }
 
-    // --- OTHER MODES (Capitals/Trivia/Flash/Test) ---
+    // --- OTHER MODES ---
     function loadCapitalRound(overrideData) {
         let targetState;
         if (state.gameMode === 'test') targetState = overrideData;
@@ -902,10 +943,10 @@
             const correctText = state.currentOptions.find(o => o.isCorrect).text;
             feedback.innerText = `WRONG. ANSWER WAS: ${correctText.toUpperCase()}`;
             state.currentOptions.forEach((opt, i) => { if(opt.isCorrect) document.getElementById(`triv-${i}`).classList.add('correct-anim'); });
-            setTimeout(nextTriviaRound, 3000); 
+            const win = document.getElementById('game-screen'); void win.offsetWidth; win.classList.add('shake-effect'); setTimeout(nextTriviaRound, 3000); 
         }
     }
-    function nextTriviaRound() { state.currentIdx++; loadTriviaRound(); }
+    function nextTriviaRound() { const win = document.getElementById('game-screen'); win.classList.remove('shake-effect'); state.currentIdx++; loadTriviaRound(); }
 
     function toggleFlashMode() { state.fcMode = state.fcMode === 'capitals' ? 'shapes' : 'capitals'; document.getElementById('fc-mode-display').innerText = state.fcMode.toUpperCase(); loadFlashCard(); }
     function toggleFlashSide() { state.fcStartSide = state.fcStartSide === 'front' ? 'back' : 'front'; document.getElementById('fc-side-display').innerText = state.fcStartSide.toUpperCase(); loadFlashCard(); }
